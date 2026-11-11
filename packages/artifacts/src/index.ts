@@ -93,6 +93,7 @@ export class DirectoryArtifactStore implements ArtifactStore {
         }
       }
       if (files === 0) throw new XeroError('ARTIFACT_INVALID', 'artifact contains no files');
+      await this.assertSymlinksContained(tmp, entries);
       const hex = await hashTree(tmp);
       const final = join(this.root, hex);
       let exists = false;
@@ -157,6 +158,26 @@ export class DirectoryArtifactStore implements ArtifactStore {
     }
     await walk(source, '');
     return out;
+  }
+
+  /**
+   * Authoritative symlink check against the real filesystem (the lexical check in `collect` is only a fast-fail and can be
+   * fooled by chains such as `d/up -> ..` + `esc -> d/up/..`). Dangling links are rejected too.
+   */
+  private async assertSymlinksContained(tree: string, entries: Entry[]): Promise<void> {
+    const realRoot = await realpath(tree);
+    for (const e of entries) {
+      if (e.kind !== 'symlink') continue;
+      let real: string;
+      try {
+        real = await realpath(join(tree, ...e.rel.split('/')));
+      } catch {
+        throw new XeroError('ARTIFACT_INVALID', `dangling or unresolvable symlink: ${e.rel}`);
+      }
+      if (real !== realRoot && !real.startsWith(realRoot + sep)) {
+        throw new XeroError('ARTIFACT_INVALID', `symlink escapes the artifact root: ${e.rel}`);
+      }
+    }
   }
 
   /** Make the stored tree read-only (files 0444/0555, dirs 0555). */

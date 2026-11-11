@@ -67,6 +67,21 @@ describe('DirectoryArtifactStore', () => {
     await expect(store.ingest(join(work, 'src'))).rejects.toMatchObject({ code: 'ARTIFACT_INVALID' });
   });
 
+  it('rejects symlink chains that pass a lexical check but escape in reality', async () => {
+    write('a.js', 'x');
+    mkdirSync(join(work, 'src', 'd'));
+    symlinkSync('..', join(work, 'src', 'd', 'up')); // -> root (inside)
+    symlinkSync('d/up/..', join(work, 'src', 'esc')); // lexically root, really root's parent
+    await expect(store.ingest(join(work, 'src'))).rejects.toMatchObject({ code: 'ARTIFACT_INVALID' });
+    expect(readdirSync(join(work, 'store')).filter((n) => n.startsWith('.tmp-'))).toEqual([]);
+  });
+
+  it('rejects dangling symlinks', async () => {
+    write('a.js', 'x');
+    symlinkSync('missing.js', join(work, 'src', 'dangling'));
+    await expect(store.ingest(join(work, 'src'))).rejects.toMatchObject({ code: 'ARTIFACT_INVALID' });
+  });
+
   it('allows relative symlinks that stay inside', async () => {
     write('a.js', 'x');
     symlinkSync('a.js', join(work, 'src', 'link.js'));
