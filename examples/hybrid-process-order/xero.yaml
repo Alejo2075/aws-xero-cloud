@@ -1,0 +1,21 @@
+apiVersion: xero.dev/v1alpha1
+kind: Function
+metadata:
+  name: process-order
+spec:
+  runtime: nodejs22.x
+  handler: index.handler
+  deployments:
+    local:
+      memoryMb: 256
+      timeoutSec: 10
+      environment:
+        TABLE_NAME: orders
+      # An EXISTING role you created (see iam/). Xero assumes it with STS; it never creates it.
+      awsRoleArn: arn:aws:iam::123456789012:role/xero-process-order
+    aws-lambda:
+      mode: existing   # Xero never creates or updates this Lambda
+      arn: arn:aws:lambda:us-east-1:123456789012:function:process-order:live
+  routing:
+    strategy: manual
+    defaultTarget: local

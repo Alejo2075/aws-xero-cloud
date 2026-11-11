@@ -1,0 +1,14 @@
+apiVersion: xero.dev/v1alpha1
+kind: Function
+metadata:
+  name: hello
+spec:
+  runtime: nodejs22.x
+  handler: index.handler
+  deployments:
+    local:
+      memoryMb: 128
+      timeoutSec: 5
+  routing:
+    strategy: manual
+    defaultTarget: local

@@ -134,6 +134,16 @@ describe('DockerBackend', () => {
     await expect(missing.ping()).rejects.toMatchObject({ code: 'BACKEND_UNAVAILABLE' });
   });
 
+  it('recognises both old and new docker CLI "daemon not running" messages as BACKEND_UNAVAILABLE', async () => {
+    for (const stderr of [
+      'failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory',
+      'docker: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?',
+    ]) {
+      const b = new DockerBackend({ runner: async () => ({ stdout: '', stderr, code: 125 }) });
+      await expect(b.startWorker(spec)).rejects.toMatchObject({ code: 'BACKEND_UNAVAILABLE' });
+    }
+  });
+
   it('start failure surfaces WORKER_START_FAILED', async () => {
     const b = new DockerBackend({ runner: async () => ({ stdout: '', stderr: 'pull access denied', code: 125 }) });
     await expect(b.startWorker(spec)).rejects.toMatchObject({ code: 'WORKER_START_FAILED' });

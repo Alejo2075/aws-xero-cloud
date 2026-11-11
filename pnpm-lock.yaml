@@ -8,6 +8,12 @@ importers:
 
   .:
     devDependencies:
+      '@aws-sdk/client-sqs':
+        specifier: ^3.0.0
+        version: 3.1167.0
+      '@aws-sdk/credential-providers':
+        specifier: ^3.0.0
+        version: 3.1167.0
       '@eslint/js':
         specifier: ^9.39.0
         version: 9.39.5

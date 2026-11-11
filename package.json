@@ -38,6 +38,8 @@
     "@xero/event-source-sqs": "workspace:*",
     "@xero/aws-identity": "workspace:*",
     "@xero/telemetry": "workspace:*",
-    "@xero/shared": "workspace:*"
+    "@xero/shared": "workspace:*",
+    "@aws-sdk/client-sqs": "^3.0.0",
+    "@aws-sdk/credential-providers": "^3.0.0"
   }
 }

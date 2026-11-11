@@ -1,0 +1,11 @@
+apiVersion: xero.dev/v1alpha1
+kind: Function
+metadata:
+  name: hello-py
+spec:
+  runtime: python3.13
+  handler: lambda_function.lambda_handler
+  deployments:
+    local:
+      memoryMb: 128
+      timeoutSec: 5

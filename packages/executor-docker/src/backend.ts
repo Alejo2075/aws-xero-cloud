@@ -30,6 +30,9 @@ export interface DockerBackendOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** Messages printed by docker/podman CLIs when the engine is not reachable (old and new wording). */
+export const DAEMON_DOWN = /failed to connect to the docker API|Cannot connect to the Docker daemon|daemon is running|docker daemon running|error during connect|connection refused|docker\.sock/i;
+
 export const LABEL_MANAGED = 'xero.managed';
 const RUNTIME_PORT = 8080;
 
@@ -116,7 +119,7 @@ export class DockerBackend implements ExecutionBackend {
       await rm(envDir, { recursive: true, force: true });
     }
     if (run.code !== 0) {
-      if (/Cannot connect to the Docker daemon|docker daemon running|error during connect|connection refused/i.test(run.stderr)) {
+      if (DAEMON_DOWN.test(run.stderr)) {
         throw new XeroError('BACKEND_UNAVAILABLE', 'container engine is not reachable (is the Docker daemon running?)');
       }
       throw new XeroError('WORKER_START_FAILED', 'failed to start worker container', { stderr: run.stderr.trim().slice(0, 500) });
