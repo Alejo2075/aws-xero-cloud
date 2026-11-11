@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "composite": false, "incremental": false, "noEmit": true, "declaration": false, "declarationMap": false, "sourceMap": false, "rootDir": "." },
+  "include": ["packages/*/test", "apps/*/test", "tests", "vitest.config.ts"]
+}

@@ -1,9 +1,11 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
 export default tseslint.config(
   { ignores: ['**/dist/**', '**/node_modules/**', 'examples/**', '**/*.tsbuildinfo'] },
   js.configs.recommended,
+  { languageOptions: { globals: { ...globals.node } } },
   ...tseslint.configs.recommended,
   {
     files: ['**/*.ts'],
@@ -12,14 +14,14 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'no-restricted-imports': ['error', { patterns: [{ group: ['**/src/**', '**/dist/**'], message: 'No private deep imports.' }] }],
+      'no-restricted-imports': ['error', { patterns: [{ group: ['@xero/*/src/*', '@xero/*/dist/*', '@xero/*/src', '@xero/*/dist'], message: 'No private deep imports.' }] }],
     },
   },
   {
     // Dependency rule: core domain packages must not import infrastructure SDKs.
     files: ['packages/{core,specification,invocation,scheduler,scaling}/src/**/*.ts'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: ['@aws-sdk/*', 'dockerode', '@kubernetes/*', 'react*'] }],
+      'no-restricted-imports': ['error', { patterns: ['@aws-sdk/*', '@smithy/*', 'dockerode', '@kubernetes/*', 'react*', '@xero/*/src/*', '@xero/*/dist/*'] }],
     },
   },
 );
