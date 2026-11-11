@@ -58,6 +58,10 @@ export class WorkerPool {
     this.margin = options.credentialRefreshMarginMs ?? 5 * 60_000;
   }
 
+  backendFor(): ExecutionBackend {
+    return this.options.backend;
+  }
+
   start(): void {
     if (this.timer) return;
     this.timer = setInterval(() => void this.reapIdle(), this.options.reapIntervalMs ?? 1000);

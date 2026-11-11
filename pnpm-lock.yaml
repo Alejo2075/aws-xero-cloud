@@ -89,6 +89,13 @@ importers:
       '@xero/specification':
         specifier: workspace:*
         version: link:../specification
+    devDependencies:
+      '@xero/registry':
+        specifier: workspace:*
+        version: link:../registry
+      '@xero/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
 
   packages/registry:
     dependencies:

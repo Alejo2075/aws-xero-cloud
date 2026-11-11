@@ -22,5 +22,9 @@
     "@xero/execution": "workspace:*",
     "@xero/scheduler": "workspace:*",
     "@xero/scaling": "workspace:*"
+  },
+  "devDependencies": {
+    "@xero/registry": "workspace:*",
+    "@xero/telemetry": "workspace:*"
   }
 }
