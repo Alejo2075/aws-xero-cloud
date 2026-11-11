@@ -1,0 +1,28 @@
+{
+  "name": "@xero/event-source-sqs",
+  "version": "0.1.0",
+  "description": "Opt-in SQS consumer delivering AWS events to local handlers",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xero/core": "workspace:*",
+    "@xero/specification": "workspace:*",
+    "@xero/shared": "workspace:*",
+    "@aws-sdk/client-sqs": "^3.0.0",
+    "@aws-sdk/types": "^3.0.0"
+  },
+  "devDependencies": {
+    "aws-sdk-client-mock": "^4.0.0"
+  }
+}

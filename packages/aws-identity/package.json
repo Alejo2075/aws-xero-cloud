@@ -1,0 +1,28 @@
+{
+  "name": "@xero/aws-identity",
+  "version": "0.1.0",
+  "description": "AWS profile verification and scoped temporary credentials",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xero/core": "workspace:*",
+    "@xero/specification": "workspace:*",
+    "@aws-sdk/client-sts": "^3.0.0",
+    "@aws-sdk/credential-providers": "^3.0.0",
+    "@aws-sdk/types": "^3.0.0"
+  },
+  "devDependencies": {
+    "aws-sdk-client-mock": "^4.0.0"
+  }
+}

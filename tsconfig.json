@@ -39,6 +39,15 @@
     },
     {
       "path": "./packages/invocation"
+    },
+    {
+      "path": "./packages/aws-identity"
+    },
+    {
+      "path": "./packages/target-aws-lambda"
+    },
+    {
+      "path": "./packages/event-source-sqs"
     }
   ]
 }
