@@ -48,6 +48,27 @@ importers:
         specifier: workspace:*
         version: link:../specification
 
+  packages/execution:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../specification
+
+  packages/executor-docker:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/registry:
     dependencies:
       '@xero/core':
@@ -56,6 +77,30 @@ importers:
       '@xero/shared':
         specifier: workspace:*
         version: link:../shared
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../specification
+
+  packages/runtime-node:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../specification
+
+  packages/runtime-python:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../execution
       '@xero/specification':
         specifier: workspace:*
         version: link:../specification

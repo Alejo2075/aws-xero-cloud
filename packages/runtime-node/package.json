@@ -1,0 +1,23 @@
+{
+  "name": "@xero/runtime-node",
+  "version": "0.1.0",
+  "description": "Node.js Lambda handler adapter",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xero/execution": "workspace:*",
+    "@xero/core": "workspace:*",
+    "@xero/specification": "workspace:*"
+  }
+}

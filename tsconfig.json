@@ -18,6 +18,18 @@
     },
     {
       "path": "./packages/artifacts"
+    },
+    {
+      "path": "./packages/execution"
+    },
+    {
+      "path": "./packages/runtime-node"
+    },
+    {
+      "path": "./packages/runtime-python"
+    },
+    {
+      "path": "./packages/executor-docker"
     }
   ]
 }
