@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { XeroApiError, type XeroClient, type Target } from '@xero/sdk';
 import { CliUsageError, defaultName, inferRuntime, loadManifest } from './manifest.js';
-import { renderDeployment, renderFunctions, renderInvocations, renderLogs, table } from './render.js';
+import { clean, renderDeployment, renderFunctions, renderInvocations, renderLogs, table } from './render.js';
 
 export interface CliIo {
   client: () => Promise<XeroClient>;
@@ -104,6 +104,7 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
         const name = updating ? need(positionals[0], 'function name') : ((values.name as string | undefined) ?? m?.metadata.name ?? defaultName(dir));
         if (updating) await (await io.client()).inspect(name); // "update" never creates: FUNCTION_NOT_FOUND if it does not exist
         const source = local && local.artifact !== '.' ? resolve(dir, local.artifact) : dir;
+        if (source !== dir && !source.startsWith(dir + sep)) throw new CliUsageError('manifest artifact must stay inside the function directory');
         const env = { ...(local?.environment ?? {}), ...(envPairs(values.env) ?? {}) };
         const defaultTarget = target(values['default-target'], 'default-target') ?? m?.spec.routing?.defaultTarget;
         const res = await (await io.client()).deployLocal(name, {
@@ -324,10 +325,10 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
       return 2;
     }
     if (e instanceof XeroApiError) {
-      io.stderr(`error [${e.code}]: ${e.message}${e.requestId ? ` (request ${e.requestId})` : ''}\n`);
+      io.stderr(`error [${e.code}]: ${clean(e.message)}${e.requestId ? ` (request ${clean(e.requestId)})` : ''}\n`);
       return 1;
     }
-    io.stderr(`error: ${e instanceof Error ? e.message : String(e)}\n`);
+    io.stderr(`error: ${clean(e instanceof Error ? e.message : String(e))}\n`);
     return 1;
   }
 }

@@ -115,6 +115,25 @@ spec:
     expect(nf.err).toMatch(/error \[FUNCTION_NOT_FOUND\]/);
   });
 
+  it('rejects manifest artifacts that escape the function directory', async () => {
+    for (const art of ['../..', '/etc']) {
+      const dir = env.source({ 'index.js': 'x', 'xero.json': JSON.stringify({ apiVersion: 'xero.dev/v1alpha1', kind: 'Function', metadata: { name: 'evil' }, spec: { runtime: 'nodejs22.x', handler: 'index.handler', deployments: { local: { artifact: art } } } }) });
+      const r = await xero(['deploy', dir]);
+      expect(r.code).toBe(2);
+      expect(await env.client.listFunctions()).toEqual([]);
+    }
+  });
+
+  it('neutralises terminal escape sequences in untrusted log text', async () => {
+    await xero(['deploy', env.source({ 'index.js': 'x' }), '--name', 'esc']);
+    await env.client.invoke('esc', {});
+    env.backend.emitLog([...env.backend.alive.keys()][0]!, 'stdout', 'boom\u001b]0;pwned\u0007\u001b[2J');
+    await new Promise((r) => setTimeout(r, 400));
+    const out = (await xero(['logs', 'esc'])).out;
+    expect(out).not.toContain('\u001b');
+    expect(out).toContain('\\x1b');
+  });
+
   it('infers Python functions from lambda_function.py', async () => {
     const dir = env.source({ 'lambda_function.py': 'def lambda_handler(e, c):\n    return e\n' });
     expect((await xero(['deploy', dir, '--name', 'py'])).code).toBe(0);

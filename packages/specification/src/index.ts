@@ -61,7 +61,11 @@ export function parseQueueUrl(url: string): { region: string; accountId: string;
 
 export const localDeploymentSpecSchema = z
   .object({
-    artifact: z.string().min(1).default('.'),
+    artifact: z
+      .string()
+      .min(1)
+      .refine((a) => !a.startsWith('/') && !/^[A-Za-z]:/.test(a) && !a.split(/[\\/]/).includes('..'), 'artifact must be a relative path inside the function directory')
+      .default('.'),
     memoryMb: z.number().int().min(128).max(3008).default(128),
     timeoutSec: z.number().int().min(1).max(900).default(3),
     maxConcurrency: z.number().int().min(1).max(100).default(2),
