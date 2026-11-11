@@ -30,6 +30,15 @@
     },
     {
       "path": "./packages/executor-docker"
+    },
+    {
+      "path": "./packages/scheduler"
+    },
+    {
+      "path": "./packages/scaling"
+    },
+    {
+      "path": "./packages/invocation"
     }
   ]
 }

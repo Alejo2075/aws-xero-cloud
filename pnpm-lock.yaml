@@ -69,6 +69,27 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
+  packages/invocation:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@xero/scaling':
+        specifier: workspace:*
+        version: link:../scaling
+      '@xero/scheduler':
+        specifier: workspace:*
+        version: link:../scheduler
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../specification
+
   packages/registry:
     dependencies:
       '@xero/core':
@@ -104,6 +125,27 @@ importers:
       '@xero/specification':
         specifier: workspace:*
         version: link:../specification
+
+  packages/scaling:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../execution
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/scheduler:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared: {}
 

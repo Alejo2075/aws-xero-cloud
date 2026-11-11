@@ -1,0 +1,26 @@
+{
+  "name": "@xero/invocation",
+  "version": "0.1.0",
+  "description": "Invocation contracts, router and target executors",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xero/core": "workspace:*",
+    "@xero/specification": "workspace:*",
+    "@xero/shared": "workspace:*",
+    "@xero/execution": "workspace:*",
+    "@xero/scheduler": "workspace:*",
+    "@xero/scaling": "workspace:*"
+  }
+}

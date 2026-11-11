@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../specification"
+    },
+    {
+      "path": "../shared"
+    },
+    {
+      "path": "../execution"
+    },
+    {
+      "path": "../scheduler"
+    },
+    {
+      "path": "../scaling"
+    }
+  ]
+}

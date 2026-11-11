@@ -96,3 +96,4 @@ export function imageOverride(runtime: Runtime, env: NodeJS.ProcessEnv = process
 }
 
 export const WORKER_ENDPOINT_PATH = '/2015-03-31/functions/function/invocations';
+export * from './fake.js';
