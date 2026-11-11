@@ -88,6 +88,9 @@ importers:
         specifier: workspace:*
         version: link:../specification
     devDependencies:
+      '@xero/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       aws-sdk-client-mock:
         specifier: ^4.0.0
         version: 4.1.0

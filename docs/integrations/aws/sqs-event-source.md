@@ -10,3 +10,15 @@ messageAttributes, eventSource, eventSourceARN, awsRegion`). Outcome:
 - visibility extension (`ChangeMessageVisibility`) while the invocation runs.
 Duplicates are possible: handlers must be idempotent (use `messageId`). Required IAM: see credentials-and-iam.md.
 Costs: SQS requests are billed by AWS (about one receive per poll, plus deletes).
+
+## Poison messages
+Xero never deletes a message the handler did not acknowledge, and never moves messages itself: the queue's redrive policy
+(DLQ + `maxReceiveCount`) is the only mechanism. To isolate one poison message without failing the whole batch, return a
+Lambda-style partial batch response (`{"batchItemFailures":[{"itemIdentifier":"<messageId>"}]}`). A handler that throws or
+returns a function error fails the **entire** batch, exactly as with native Lambda. Malformed `batchItemFailures` are
+treated as a whole-batch failure. On FIFO queues processing is serialised and a failure also leaves all later messages of
+the batch unacknowledged.
+
+## Early release
+Only invocations that provably did not run (capacity exhausted, target not deployed, AWS not connected, throttled) release the
+batch early (`ChangeMessageVisibility` to 10 s). Timeouts, crashes and unknown outcomes wait for the normal visibility timeout.
