@@ -25,7 +25,7 @@ export const handlerSchema = z
 
 const RESERVED_ENV = /^(AWS_|XERO_|_)/i;
 export const environmentSchema = z
-  .record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/, 'invalid environment variable name'), z.string().max(4096))
+  .record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]*$/, 'invalid environment variable name'), z.string().max(4096).refine((v) => !/[\r\n\0]/.test(v), 'value must not contain newlines'))
   .superRefine((env, ctx) => {
     let total = 0;
     for (const [k, v] of Object.entries(env)) {

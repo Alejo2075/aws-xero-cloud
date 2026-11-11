@@ -77,3 +77,9 @@ describe('misc', () => {
     expect(r).toMatchObject({ target: 'local', batchSize: 10, maxInFlight: 1 });
   });
 });
+
+describe('environment values', () => {
+  it('rejects newlines (cannot be represented in an env-file)', () => {
+    expect(environmentSchema.safeParse({ A: 'x\nB=y' }).success).toBe(false);
+  });
+});

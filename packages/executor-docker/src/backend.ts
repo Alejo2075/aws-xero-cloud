@@ -1,4 +1,7 @@
 import { connect } from 'node:net';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { XeroError } from '@xero/core';
 import {
   WORKER_ENDPOINT_PATH,
@@ -31,7 +34,7 @@ export const LABEL_MANAGED = 'xero.managed';
 const RUNTIME_PORT = 8080;
 
 /** Pure function so the hardening flags are unit-testable without a Docker daemon. */
-export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsSizeMb: number; user: string }): string[] {
+export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsSizeMb: number; user: string; envFile?: string | undefined }): string[] {
   const cpus = Math.min(2, Math.max(0.1, spec.memoryMb / 1769)).toFixed(2);
   const args = [
     'run', '-d',
@@ -58,8 +61,9 @@ export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsS
     '--env', 'AWS_LAMBDA_FUNCTION_VERSION=$LATEST',
     '--env', 'AWS_EXECUTION_ENV=Xero_Local',
   ];
-  // Names only: values travel through the docker client's environment, never argv.
-  for (const key of Object.keys(spec.environment).sort()) args.push('--env', key);
+  // Function variables (possibly secrets) travel in a 0600 env-file: not in argv (visible via ps) and never in the
+  // docker client's own environment (a user-chosen name such as DOCKER_HOST or LD_PRELOAD must not affect the host CLI).
+  if (opts.envFile) args.push('--env-file', opts.envFile);
   args.push(spec.image, ...spec.command);
   return args;
 }
@@ -101,8 +105,16 @@ export class DockerBackend implements ExecutionBackend {
   }
 
   async startWorker(spec: WorkerSpec): Promise<WorkerHandle> {
-    const args = buildRunArgs(spec, { pidsLimit: this.pidsLimit, tmpfsSizeMb: this.tmpfsSizeMb, user: this.user });
-    const run = await this.docker(args, { ...spec.environment }, 120_000); // first run may pull the image
+    const envDir = await mkdtemp(join(tmpdir(), 'xero-env-'));
+    let run;
+    try {
+      const envFile = join(envDir, 'env');
+      await writeFile(envFile, serializeEnvFile(spec.environment), { mode: 0o600 });
+      const args = buildRunArgs(spec, { pidsLimit: this.pidsLimit, tmpfsSizeMb: this.tmpfsSizeMb, user: this.user, envFile });
+      run = await this.docker(args, undefined, 120_000); // first run may pull the image
+    } finally {
+      await rm(envDir, { recursive: true, force: true });
+    }
     if (run.code !== 0) {
       throw new XeroError('WORKER_START_FAILED', 'failed to start worker container', { stderr: run.stderr.trim().slice(0, 500) });
     }
@@ -244,6 +256,18 @@ export class DockerBackend implements ExecutionBackend {
   async reap(backendId: string): Promise<void> {
     await this.docker(['rm', '--force', '--volumes', backendId], undefined, 30_000);
   }
+}
+
+const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+/** Docker --env-file format: KEY=VALUE per line, no quoting. Rejects anything that cannot be represented safely. */
+export function serializeEnvFile(env: Readonly<Record<string, string>>): string {
+  const lines: string[] = [];
+  for (const [k, v] of Object.entries(env)) {
+    if (!ENV_NAME.test(k)) throw new XeroError('INVALID_REQUEST', `invalid environment variable name "${k}"`);
+    if (/[\r\n\0]/.test(v)) throw new XeroError('INVALID_REQUEST', `environment variable ${k} contains a newline or NUL`);
+    lines.push(`${k}=${v}`);
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 function classify(header: string | null, status: number, body: Uint8Array): 'ok' | 'function-error' {

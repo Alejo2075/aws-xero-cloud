@@ -5,4 +5,4 @@
 immutable artifact mounted read-only at `/var/task`, publish port bound to `127.0.0.1`, label `xero.managed=true`.
 Timeout = kill the container (fence), never just abort the HTTP request. Crashes surface as `WORKER_CRASHED`; the
 controller reaps orphans labelled `xero.managed=true` on boot.
-Credentials are injected only as env vars for that worker (see `integrations/aws/credentials-and-iam.md`).
+Function environment (including injected credentials) is passed with a temporary 0600 `--env-file` that is deleted right after `docker run`: never in argv and never in the `docker` client's own environment, so variable names such as `DOCKER_HOST`/`LD_PRELOAD` cannot influence the host CLI. Credentials are injected only as env vars for that worker (see `integrations/aws/credentials-and-iam.md`).

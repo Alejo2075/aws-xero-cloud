@@ -1,8 +1,9 @@
+import { readFileSync, existsSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { WorkerSpec } from '@xero/execution';
-import { DockerBackend, buildRunArgs, type CommandRunner } from '../src/index.js';
+import { DockerBackend, buildRunArgs, serializeEnvFile, type CommandRunner } from '../src/index.js';
 
 const spec: WorkerSpec = {
   workerId: 'w1', functionId: 'fn_1', deploymentId: 'dep_1', functionName: 'hello',
@@ -11,7 +12,7 @@ const spec: WorkerSpec = {
 };
 
 describe('buildRunArgs', () => {
-  const args = buildRunArgs(spec, { pidsLimit: 256, tmpfsSizeMb: 512, user: '1000:1000' });
+  const args = buildRunArgs(spec, { pidsLimit: 256, tmpfsSizeMb: 512, user: '1000:1000', envFile: '/tmp/xero-env-x/env' });
   const joined = args.join(' ');
   it('applies container hardening', () => {
     for (const f of ['--read-only', '--cap-drop ALL', '--security-opt no-new-privileges', '--pids-limit 256', '--memory 256m', '--memory-swap 256m', '--user 1000:1000', '--publish 127.0.0.1::8080', '--volume /store/abc:/var/task:ro'])
@@ -25,17 +26,20 @@ describe('buildRunArgs', () => {
   });
   it('keeps secret values out of argv', () => {
     expect(joined).not.toContain('TOPSECRETTOKENVALUE');
-    expect(args).toContain('AWS_SESSION_TOKEN');
+    expect(args).toContain('--env-file');
+    expect(args).not.toContain('AWS_SESSION_TOKEN');
     expect(args.at(-2)).toBe(spec.image);
     expect(args.at(-1)).toBe('index.handler');
   });
 });
 
-interface Call { args: readonly string[]; env: Record<string, string> | undefined }
+interface Call { args: readonly string[]; env: Record<string, string> | undefined; envFile?: string | undefined; envFileBody?: string | undefined }
 function fakeDocker(port: number, state: { Running: boolean; OOMKilled?: boolean; ExitCode?: number } = { Running: true }) {
   const calls: Call[] = [];
   const runner: CommandRunner = async (_c, args, o) => {
-    calls.push({ args, env: o?.env });
+    const i = args.indexOf('--env-file');
+    const envFile = i >= 0 ? args[i + 1] : undefined;
+    calls.push({ args, env: o?.env, envFile, envFileBody: envFile && existsSync(envFile) ? readFileSync(envFile, 'utf8') : undefined });
     switch (args[0]) {
       case 'run': return { stdout: 'cid123\n', stderr: '', code: 0 };
       case 'port': return { stdout: `127.0.0.1:${port}\n`, stderr: '', code: 0 };
@@ -58,15 +62,26 @@ async function listen(handler: Parameters<typeof createServer>[1]): Promise<numb
 }
 
 describe('DockerBackend', () => {
-  it('starts a worker, passes secrets via env (not argv) and resolves the endpoint', async () => {
+  it('starts a worker, passes variables via a private env-file (not argv, not the docker client env)', async () => {
     const port = await listen((_q, s) => s.end('{}'));
     const { runner, calls } = fakeDocker(port);
+    const hostile = { ...spec, environment: { ...spec.environment, DOCKER_HOST: 'tcp://evil:2375', LD_PRELOAD: '/x.so', DYLD_INSERT_LIBRARIES: '/y' } };
     const b = new DockerBackend({ runner });
-    const h = await b.startWorker(spec);
+    const h = await b.startWorker(hostile);
     expect(h.endpoint).toBe(`http://127.0.0.1:${port}`);
     const run = calls.find((c) => c.args[0] === 'run')!;
-    expect(run.env?.AWS_SESSION_TOKEN).toBe('TOPSECRETTOKENVALUE');
+    expect(run.env).toBeUndefined(); // docker CLI environment is untouched by function configuration
     expect(run.args.join(' ')).not.toContain('TOPSECRETTOKENVALUE');
+    expect(run.args.join(' ')).not.toContain('evil');
+    expect(run.envFileBody).toContain('AWS_SESSION_TOKEN=TOPSECRETTOKENVALUE');
+    expect(run.envFileBody).toContain('DOCKER_HOST=tcp://evil:2375'); // reaches the container only
+    expect(existsSync(run.envFile!)).toBe(false); // removed right after docker run
+  });
+
+  it('rejects environment values that cannot be represented safely', () => {
+    expect(() => serializeEnvFile({ A: 'x\nB=y' })).toThrowError(expect.objectContaining({ code: 'INVALID_REQUEST' }));
+    expect(() => serializeEnvFile({ 'A B': 'x' })).toThrow();
+    expect(serializeEnvFile({ A: 'x', B: 'y=z' })).toBe('A=x\nB=y=z\n');
   });
 
   it('invokes via the runtime interface endpoint and classifies handler errors', async () => {
