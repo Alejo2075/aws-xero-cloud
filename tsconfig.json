@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/specification"
+    },
+    {
+      "path": "./packages/shared"
+    },
+    {
+      "path": "./packages/core"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.xero/
+*.log
+.DS_Store
+.idea/
+.env
+.env.*

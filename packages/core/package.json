@@ -1,0 +1,22 @@
+{
+  "name": "@xero/core",
+  "version": "0.1.0",
+  "description": "Domain model, errors and ports",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@xero/specification": "workspace:*",
+    "@xero/shared": "workspace:*"
+  }
+}
