@@ -109,6 +109,7 @@ spec:
     expect((await xero(['invoke', 'x', '--payload', '{bad'])).err).toContain('not valid JSON');
     expect((await xero(['invoke', 'x', '--target', 'mars'])).code).toBe(2);
     expect((await xero(['deploy', env.source({ 'readme.txt': 'x' })])).err).toContain('cannot infer runtime');
+    expect((await xero(['update', 'ghost', env.source({ 'index.js': 'x' })])).err).toMatch(/FUNCTION_NOT_FOUND/);
     const nf = await xero(['invoke', 'ghost']);
     expect(nf.code).toBe(1);
     expect(nf.err).toMatch(/error \[FUNCTION_NOT_FOUND\]/);

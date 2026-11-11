@@ -102,6 +102,7 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
         const handler = (values.handler as string | undefined) ?? m?.spec.handler ?? inferred?.handler;
         if (!runtime || !handler) throw new CliUsageError('cannot infer runtime/handler: pass --runtime and --handler or add a xero.yaml');
         const name = updating ? need(positionals[0], 'function name') : ((values.name as string | undefined) ?? m?.metadata.name ?? defaultName(dir));
+        if (updating) await (await io.client()).inspect(name); // "update" never creates: FUNCTION_NOT_FOUND if it does not exist
         const source = local && local.artifact !== '.' ? resolve(dir, local.artifact) : dir;
         const env = { ...(local?.environment ?? {}), ...(envPairs(values.env) ?? {}) };
         const defaultTarget = target(values['default-target'], 'default-target') ?? m?.spec.routing?.defaultTarget;

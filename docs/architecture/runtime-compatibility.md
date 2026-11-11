@@ -1,7 +1,8 @@
 # Runtime compatibility matrix
 
-Evidence levels: **T** unit/contract-tested in this repo, **D** designed but needs a Docker daemon to verify (e2e suite),
-**X** not supported.
+Evidence levels: **T** tested without Docker/AWS (unit, integration or contract tests with doubles), **D** implemented but only
+verifiable with a Docker daemon (`tests/e2e/docker.test.ts`, skipped when no daemon is reachable), **A** needs the opt-in AWS suite,
+**X** not supported. Nothing marked D or A was executed in the default development environment.
 
 | Aspect | Local worker | Native Lambda | Status |
 |---|---|---|---|

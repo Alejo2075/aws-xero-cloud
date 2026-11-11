@@ -16,3 +16,16 @@
 | Unsafe egress / network exposure | publish only to 127.0.0.1; controller refuses non-loopback bind | Containers have default egress |
 | SSRF via configuration | ARN/queue URL/regex validated; optional allow-lists for accounts/regions; no user-controlled URLs fetched | — |
 | Log/telemetry leakage | structured logger with key & pattern redaction; payloads never logged | Secrets printed by function code are best-effort redacted |
+
+## Additional notes (implementation review)
+- **API token = control of the host user.** `deploy` ingests any directory readable by the controller user and mounts the
+  resulting immutable copy read-only into a container. Treat `$XERO_HOME/token` like an SSH key. The API checks the bearer token,
+  the `Host` header (DNS rebinding) and rejects requests carrying an `Origin` header (browser CSRF).
+- **Worker environment** is delivered through a temporary 0600 `--env-file` removed right after `docker run`; it is never placed in
+  argv or in the environment of the `docker` client, so function-chosen variable names cannot affect the host CLI.
+- **Symlinks** in artifacts are validated against the real filesystem after staging (chains such as `d/up -> ..` + `esc -> d/up/..`
+  are rejected), dangling links are rejected.
+- **AWS targets** (account/region) are checked against the connected account and optional `XERO_ALLOWED_ACCOUNTS` /
+  `XERO_ALLOWED_REGIONS`; queue URLs must be genuine `sqs.<region>.amazonaws.com` URLs.
+- **Container egress**: workers use the default bridge network and can reach the internet (and the Docker host gateway). Use
+  engine-level network policy if functions must be restricted.

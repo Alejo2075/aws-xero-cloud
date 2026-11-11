@@ -51,7 +51,7 @@ Xero **never** creates Lambda functions, IAM roles, queues or any chargeable AWS
 
 ## Repository layout
 
-See [`CLAUDE.md`](CLAUDE.md) §8 and [`docs/architecture/overview.md`](docs/architecture/overview.md).
+See [`docs/architecture/overview.md`](docs/architecture/overview.md), the [getting-started guide](docs/guides/getting-started.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## Development
 
