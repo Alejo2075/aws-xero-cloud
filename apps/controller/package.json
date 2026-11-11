@@ -1,0 +1,40 @@
+{
+  "name": "@xero/controller",
+  "version": "0.1.0",
+  "description": "Xero controller: local management and invocation API",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "xero-controller": "./dist/main.js"
+  },
+  "dependencies": {
+    "@xero/core": "workspace:*",
+    "@xero/specification": "workspace:*",
+    "@xero/shared": "workspace:*",
+    "@xero/registry": "workspace:*",
+    "@xero/artifacts": "workspace:*",
+    "@xero/execution": "workspace:*",
+    "@xero/executor-docker": "workspace:*",
+    "@xero/runtime-node": "workspace:*",
+    "@xero/runtime-python": "workspace:*",
+    "@xero/scheduler": "workspace:*",
+    "@xero/scaling": "workspace:*",
+    "@xero/invocation": "workspace:*",
+    "@xero/telemetry": "workspace:*",
+    "@xero/aws-identity": "workspace:*",
+    "@xero/target-aws-lambda": "workspace:*",
+    "@xero/event-source-sqs": "workspace:*",
+    "zod": "^4.1.0"
+  }
+}

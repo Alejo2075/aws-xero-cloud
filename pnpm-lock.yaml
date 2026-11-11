@@ -14,6 +14,36 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
+      '@xero/aws-identity':
+        specifier: workspace:*
+        version: link:packages/aws-identity
+      '@xero/controller':
+        specifier: workspace:*
+        version: link:apps/controller
+      '@xero/core':
+        specifier: workspace:*
+        version: link:packages/core
+      '@xero/event-source-sqs':
+        specifier: workspace:*
+        version: link:packages/event-source-sqs
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:packages/execution
+      '@xero/registry':
+        specifier: workspace:*
+        version: link:packages/registry
+      '@xero/sdk':
+        specifier: workspace:*
+        version: link:packages/sdk
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:packages/shared
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:packages/specification
+      '@xero/telemetry':
+        specifier: workspace:*
+        version: link:packages/telemetry
       eslint:
         specifier: ^9.39.0
         version: 9.39.5
@@ -29,6 +59,60 @@ importers:
       vitest:
         specifier: ^3.2.0
         version: 3.2.7(@types/node@24.19.2)
+
+  apps/controller:
+    dependencies:
+      '@xero/artifacts':
+        specifier: workspace:*
+        version: link:../../packages/artifacts
+      '@xero/aws-identity':
+        specifier: workspace:*
+        version: link:../../packages/aws-identity
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@xero/event-source-sqs':
+        specifier: workspace:*
+        version: link:../../packages/event-source-sqs
+      '@xero/execution':
+        specifier: workspace:*
+        version: link:../../packages/execution
+      '@xero/executor-docker':
+        specifier: workspace:*
+        version: link:../../packages/executor-docker
+      '@xero/invocation':
+        specifier: workspace:*
+        version: link:../../packages/invocation
+      '@xero/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
+      '@xero/runtime-node':
+        specifier: workspace:*
+        version: link:../../packages/runtime-node
+      '@xero/runtime-python':
+        specifier: workspace:*
+        version: link:../../packages/runtime-python
+      '@xero/scaling':
+        specifier: workspace:*
+        version: link:../../packages/scaling
+      '@xero/scheduler':
+        specifier: workspace:*
+        version: link:../../packages/scheduler
+      '@xero/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../../packages/specification
+      '@xero/target-aws-lambda':
+        specifier: workspace:*
+        version: link:../../packages/target-aws-lambda
+      '@xero/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
+      zod:
+        specifier: ^4.1.0
+        version: 4.6.7
 
   packages/artifacts:
     dependencies:
@@ -200,6 +284,15 @@ importers:
       '@xero/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/sdk:
+    dependencies:
+      '@xero/core':
+        specifier: workspace:*
+        version: link:../core
+      '@xero/specification':
+        specifier: workspace:*
+        version: link:../specification
 
   packages/shared: {}
 

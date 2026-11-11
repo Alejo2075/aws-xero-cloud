@@ -116,6 +116,9 @@ export class DockerBackend implements ExecutionBackend {
       await rm(envDir, { recursive: true, force: true });
     }
     if (run.code !== 0) {
+      if (/Cannot connect to the Docker daemon|docker daemon running|error during connect|connection refused/i.test(run.stderr)) {
+        throw new XeroError('BACKEND_UNAVAILABLE', 'container engine is not reachable (is the Docker daemon running?)');
+      }
       throw new XeroError('WORKER_START_FAILED', 'failed to start worker container', { stderr: run.stderr.trim().slice(0, 500) });
     }
     const backendId = run.stdout.trim().split('\n').pop() ?? '';

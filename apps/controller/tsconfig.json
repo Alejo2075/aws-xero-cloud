@@ -1,0 +1,60 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/specification"
+    },
+    {
+      "path": "../../packages/shared"
+    },
+    {
+      "path": "../../packages/registry"
+    },
+    {
+      "path": "../../packages/artifacts"
+    },
+    {
+      "path": "../../packages/execution"
+    },
+    {
+      "path": "../../packages/executor-docker"
+    },
+    {
+      "path": "../../packages/runtime-node"
+    },
+    {
+      "path": "../../packages/runtime-python"
+    },
+    {
+      "path": "../../packages/scheduler"
+    },
+    {
+      "path": "../../packages/scaling"
+    },
+    {
+      "path": "../../packages/invocation"
+    },
+    {
+      "path": "../../packages/telemetry"
+    },
+    {
+      "path": "../../packages/aws-identity"
+    },
+    {
+      "path": "../../packages/target-aws-lambda"
+    },
+    {
+      "path": "../../packages/event-source-sqs"
+    }
+  ]
+}

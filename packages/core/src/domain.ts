@@ -126,3 +126,22 @@ export interface ArtifactRef {
   sizeBytes: number;
   fileCount: number;
 }
+
+/** Public API views (no environment values, no credentials). Shared by controller and SDK. */
+export interface DeploymentView {
+  id: string;
+  target: Target;
+  version: number;
+  status: string;
+  createdAt: number;
+  details: Record<string, unknown>;
+}
+export interface FunctionView {
+  id: string;
+  name: string;
+  description: string | undefined;
+  routing: Routing;
+  deployments: Partial<Record<Target, DeploymentView>>;
+  createdAt: number;
+  updatedAt: number;
+}

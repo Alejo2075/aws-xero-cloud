@@ -48,6 +48,12 @@
     },
     {
       "path": "./packages/event-source-sqs"
+    },
+    {
+      "path": "./apps/controller"
+    },
+    {
+      "path": "./packages/sdk"
     }
   ]
 }

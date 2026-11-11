@@ -20,7 +20,7 @@ export class AwsLambdaTargetExecutor implements TargetExecutor {
     if (!this.o.registry.getAwsConnection()) {
       throw new XeroError('AWS_NOT_CONNECTED', 'invoking an aws-lambda target requires "xero aws connect"');
     }
-    this.o.metrics?.inc('aws_requests_total', { operation: 'lambda:Invoke' });
+    this.o.metrics?.inc('aws_requests_total', { operation: 'lambda:Invoke', function: ctx.fn.name });
     const res = await this.o.invoker().invoke({
       arn: dep.config.arn,
       region: dep.config.region,

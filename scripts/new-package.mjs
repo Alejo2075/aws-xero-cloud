@@ -40,7 +40,7 @@ const pkg = {
   dependencies: deps,
 };
 writeFileSync(join(base, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
-const refs = workspaceRefs.map((r) => ({ path: `../${r}` }));
+const refs = workspaceRefs.map((r) => ({ path: kind === 'apps' ? `../../packages/${r}` : `../${r}` }));
 // refs may point to apps? only packages are referenced.
 writeFileSync(
   join(base, 'tsconfig.json'),
