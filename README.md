@@ -1,4 +1,6 @@
-# Xero
+<h1 align="center">
+  <img src="docs/assets/xero-logo.gif" alt="Xero Cloud" width="320">
+</h1>
 
 > Your hardware. Your Lambdas. One cloud experience.
 
