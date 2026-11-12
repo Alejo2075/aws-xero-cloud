@@ -2,6 +2,16 @@
   <img src="docs/assets/xero-logo.gif" alt="Xero Cloud" width="320">
 </h1>
 
+<p align="center">
+  <a href="LICENSE"><img src="docs/assets/badges/license.svg" alt="License: Apache-2.0" height="28"></a>
+  <a href="#project-status"><img src="docs/assets/badges/status.svg" alt="Status: v0.1 pre-release" height="28"></a>
+  <a href="docs/guides/getting-started.md"><img src="docs/assets/badges/node.svg" alt="Node.js >= 24" height="28"></a>
+  <a href="docs/architecture/execution.md"><img src="docs/assets/badges/execution.svg" alt="Execution: local containers" height="28"></a>
+  <a href="docs/integrations/aws/interoperability-matrix.md"><img src="docs/assets/badges/aws.svg" alt="AWS: opt-in" height="28"></a>
+  <a href="docs/architecture/runtime-compatibility.md"><img src="docs/assets/badges/runtimes.svg" alt="Runtimes: Node.js and Python" height="28"></a>
+  <a href="docs/architecture/overview.md"><img src="docs/assets/badges/typescript.svg" alt="TypeScript: strict" height="28"></a>
+</p>
+
 > Your hardware. Your Lambdas. One cloud experience.
 
 Xero is an open-source, self-hosted runtime that runs **AWS Lambda-style functions** on a machine you own and
