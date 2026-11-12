@@ -22,24 +22,25 @@
     "typecheck:tests": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
+    "@aws-sdk/client-sqs": "^3.0.0",
+    "@aws-sdk/credential-providers": "^3.0.0",
     "@eslint/js": "^9.39.0",
     "@types/node": "^24.0.0",
+    "@xero/aws-identity": "workspace:*",
+    "@xero/controller": "workspace:*",
+    "@xero/core": "workspace:*",
+    "@xero/event-source-sqs": "workspace:*",
+    "@xero/execution": "workspace:*",
+    "@xero/registry": "workspace:*",
+    "@xero/sdk": "workspace:*",
+    "@xero/shared": "workspace:*",
+    "@xero/specification": "workspace:*",
+    "@xero/telemetry": "workspace:*",
     "eslint": "^9.39.0",
+    "globals": "^16.0.0",
     "typescript": "~5.9.0",
     "typescript-eslint": "^8.46.0",
     "vitest": "^3.2.0",
-    "globals": "^16.0.0",
-    "@xero/controller": "workspace:*",
-    "@xero/sdk": "workspace:*",
-    "@xero/core": "workspace:*",
-    "@xero/execution": "workspace:*",
-    "@xero/registry": "workspace:*",
-    "@xero/specification": "workspace:*",
-    "@xero/event-source-sqs": "workspace:*",
-    "@xero/aws-identity": "workspace:*",
-    "@xero/telemetry": "workspace:*",
-    "@xero/shared": "workspace:*",
-    "@aws-sdk/client-sqs": "^3.0.0",
-    "@aws-sdk/credential-providers": "^3.0.0"
+    "yaml": "^2.0.0"
   }
 }
