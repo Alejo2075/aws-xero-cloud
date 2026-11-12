@@ -202,7 +202,7 @@ export class DockerBackend implements ExecutionBackend {
       });
       const body = new Uint8Array(await res.arrayBuffer());
       if (body.byteLength > MAX_PAYLOAD_BYTES) throw new XeroError('PAYLOAD_TOO_LARGE', 'function response exceeds 6 MiB');
-      return { outcome: classify(res.headers.get('x-amz-function-error'), res.status, body), payload: body };
+      return { outcome: classify(res.headers.get('x-amz-function-error'), res.status, body), payload: body, recycleWorker: runtimeDied(body) };
     } catch (e) {
       if (e instanceof XeroError) throw e;
       if (timedOut) {
@@ -287,6 +287,20 @@ export function serializeEnvFile(env: Readonly<Record<string, string>>): string 
     lines.push(`${k}=${v}`);
   }
   return `${lines.join('\n')}\n`;
+}
+
+/**
+ * The AWS runtime interface emulator keeps the container alive and restarts the runtime process after it dies, reporting
+ * `Runtime.ExitError` (OOM kills show as "signal: killed"), exactly like Lambda. Such workers are discarded: their state is unknown.
+ */
+export function runtimeDied(body: Uint8Array): boolean {
+  if (body.byteLength === 0 || body.byteLength > 64 * 1024 || body[0] !== 0x7b) return false;
+  try {
+    const doc = JSON.parse(new TextDecoder().decode(body)) as { errorType?: unknown };
+    return typeof doc.errorType === 'string' && /^Runtime\.(ExitError|OutOfMemory)$/.test(doc.errorType);
+  } catch {
+    return false;
+  }
 }
 
 function classify(header: string | null, status: number, body: Uint8Array): 'ok' | 'function-error' {

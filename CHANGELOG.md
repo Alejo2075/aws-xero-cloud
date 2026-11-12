@@ -11,9 +11,13 @@ First complete implementation of the v0.1 MVP (see `docs/product/mvp.md`).
 - Controller API (loopback), SDK, CLI. Scoped API tokens, rate limiting, backup/restore, `doctor`, `images pull`, `/v1/ready`.
 - Optional alternative OCI runtime (`XERO_DOCKER_RUNTIME`, e.g. gVisor).
 
+### Fixed after first run on a real engine
+- Worker reuse after a runtime crash/OOM: the AWS emulator keeps the container up and reports `Runtime.ExitError`; such workers are now discarded.
+- Emulator `(rapid)` chatter is no longer stored in function logs.
+
 ### Known gaps (honest list)
-- Container execution and every real AWS interaction are covered only by test doubles in the default suites. `tests/e2e` (needs Docker)
-  and `tests/aws-disposable` (needs a disposable AWS account) exist but had not been executed when this was written.
+- Real AWS interaction is covered only by SDK mocks and an in-memory SQS model; `tests/aws-disposable` (disposable account) has not been run.
+- Container execution was verified with `tests/e2e` (11 tests) on Colima/Docker, linux/arm64 only (nodejs22.x and python3.13). Not verified: amd64, rootless Podman, nodejs20.x/python3.12 images, gVisor/Kata (`XERO_DOCKER_RUNTIME`).
 - The Docker backend shells out to the `docker` CLI; it does not yet use the Engine API.
 - Local async (`Event`) invocations are accepted in memory and are lost if the controller stops; they are not durable.
 - Per-function network policy is not implemented (workers keep default egress); see `docs/security/threat-model.md`.

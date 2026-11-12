@@ -176,5 +176,16 @@ describe('operational behaviour', () => {
     await new Promise((r) => setTimeout(r, 1200));
     expect(env.backend.alive.size).toBe(1); // idleTtl 0 would normally stop it immediately
   });
+
+  it('drops emulator chatter but keeps function output and runtime warnings', async () => {
+    await env.client.deployLocal('noisy', { runtime: 'nodejs22.x', handler: 'index.handler', sourcePath: node() });
+    await env.client.invoke('noisy', {});
+    const id = [...env.backend.alive.keys()][0]!;
+    env.backend.emitLog(id, 'stderr', '12 Nov 2026 02:32:30,563 [INFO] (rapid) exec \'/var/runtime/bootstrap\'');
+    env.backend.emitLog(id, 'stdout', 'user output');
+    env.backend.emitLog(id, 'stderr', '12 Nov 2026 02:32:31,000 [WARNING] (rapid) something odd');
+    const logs = await waitFor(() => env.client.logs('noisy'), (l) => l.length >= 2);
+    expect(logs.map((l) => l.message)).toEqual(['user output', '12 Nov 2026 02:32:31,000 [WARNING] (rapid) something odd']);
+  });
 });
 

@@ -68,6 +68,7 @@ export class LocalTargetExecutor implements TargetExecutor {
         deadlineAt: this.clock.now() + cfg.timeoutSec * 1000,
         signal: ctx.signal,
       });
+      if (result.recycleWorker) healthy = false; // runtime process died: discard the worker, keep the function-error semantics
       return {
         status: result.outcome === 'ok' ? 'succeeded' : 'function-error',
         payload: result.payload,

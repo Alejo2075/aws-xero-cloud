@@ -30,6 +30,11 @@ idle TTL (default 60 s) expires. Pin or mirror images with `XERO_IMAGE_NODEJS22_
 See `docs/integrations/aws/` and `examples/hybrid-process-order`. Xero never creates AWS resources; costs you incur are
 Lambda invocations, SQS requests and STS calls, visible with `xero metrics` (`aws_requests_total`).
 
+## Colima / Lima note
+Colima shares only your home directory with its VM. Keep `XERO_HOME` (default `~/.xero`) under `$HOME`; a state directory elsewhere
+(e.g. `/var/folders/...`) makes artifact mounts arrive empty and functions fail with import errors.
+Verified setup: `brew install colima && colima start --vm-type vz --cpu 4 --memory 6`.
+
 ## Troubleshooting
 - `BACKEND_UNAVAILABLE`: the container engine is not running or `docker` is not on PATH.
 - `WORKER_START_FAILED`: image pull failed or the container exited at start; the error includes a log tail.

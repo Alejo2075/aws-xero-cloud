@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createController, type Controller } from '@xero/controller';
@@ -24,7 +24,8 @@ describe.skipIf(!dockerUp)('local execution on a real container engine', () => {
   let client: XeroClient;
 
   beforeAll(async () => {
-    home = mkdtempSync(join(tmpdir(), 'xero-e2e-'));
+    // Colima/Lima share only $HOME with the VM, so artifact mounts must live under it (not under /var/folders).
+    home = mkdtempSync(join(homedir(), '.xero-e2e-'));
     c = await createController({ config: { home, port: 0, maxWorkers: 4 }, logger: silentLogger }, {});
     client = new XeroClient({ baseUrl: c.url, token: c.token });
   }, 120_000);
@@ -79,13 +80,20 @@ describe.skipIf(!dockerUp)('local execution on a real container engine', () => {
     expect((await client.invoke('behave', {})).status).toBe('succeeded');
   }, 120_000);
 
-  it('reports an out-of-memory kill distinctly from a crash', async () => {
+  it('reports an OOM kill / process crash like Lambda (Runtime.ExitError) and discards that worker', async () => {
+    // Observed with the real AWS RIE: the container survives, the runtime process is restarted, and the caller gets a
+    // function error. Xero must not reuse such a worker.
     await node({ memoryMb: 128, timeoutSec: 10 });
-    const err = await client.invoke('behave', { allocateMb: 600 }).catch((e: unknown) => e);
-    expect(['WORKER_OOM', 'WORKER_CRASHED']).toContain((err as { code: string }).code);
-    const crash = await client.invoke('behave', { crash: true }).catch((e: unknown) => e);
-    expect((crash as { code: string }).code).toBe('WORKER_CRASHED');
-    expect((await client.invoke('behave', {})).status).toBe('succeeded'); // controller and new workers unaffected
+    await client.invoke('behave', {}); // warm worker
+    const oom = await client.invoke<{ errorType: string; errorMessage: string }>('behave', { allocateMb: 600 });
+    expect(oom.status).toBe('function-error');
+    expect(oom.payload!.errorType).toBe('Runtime.ExitError');
+    expect(oom.payload!.errorMessage).toMatch(/signal: killed/);
+    const crash = await client.invoke<{ errorType: string }>('behave', { crash: true });
+    expect(crash.status).toBe('function-error');
+    expect(crash.payload!.errorType).toBe('Runtime.ExitError');
+    const after = await client.invoke('behave', {});
+    expect(after).toMatchObject({ status: 'succeeded', coldStart: true }); // fresh worker, controller unaffected
   }, 180_000);
 
   it('cannot write to the read-only artifact mount', async () => {

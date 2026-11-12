@@ -4,6 +4,9 @@ import type { Redactor } from '@xero/telemetry';
 import type { Clock } from '@xero/shared';
 
 /** Buffers function stdout/stderr, redacts known secrets and credential patterns, and persists in batches. */
+/** Informational chatter of the AWS runtime interface emulator ("(rapid) INIT START ..."); START/END/REPORT lines are kept. */
+const EMULATOR_NOISE = /\[(INFO|DEBUG)\] \(rapid\)/;
+
 export class LogWriter {
   private buffer: LogLine[] = [];
   private timer: NodeJS.Timeout | undefined;
@@ -22,7 +25,7 @@ export class LogWriter {
 
   push(worker: PooledWorker, stream: 'stdout' | 'stderr' | 'system', message: string, at = this.clock.now()): void {
     const text = message.trimEnd();
-    if (!text) return;
+    if (!text || EMULATOR_NOISE.test(text)) return;
     this.buffer.push({ functionId: worker.functionId, deploymentId: worker.deploymentId, requestId: worker.lastRequestId, stream, at, message: this.redactor.redactString(text) });
     if (this.buffer.length >= 100) this.flush();
   }

@@ -5,7 +5,7 @@ Legend: done = implemented and covered by default tests; **unverified** = implem
 | Area | Status |
 |---|---|
 | Phase 0 contracts/ADRs/threat model | done |
-| Phase 1 local engine (Node/Python) | done in code; real-container behaviour **unverified** (`pnpm test:e2e`) |
+| Phase 1 local engine (Node/Python) | done; verified on a real engine (Colima, linux/arm64) by `pnpm test:e2e` |
 | Phase 2 AWS-connected execution | done with mocks; real AWS **unverified** (`tests/aws-disposable`) |
 | Phase 3 SQS ingress, v0.1 criteria | done with an in-memory SQS model; real SQS **unverified** |
 | Hardening (tokens, rate limits, runtime option, backup/restore, drain) | done (runtime option unverified) |

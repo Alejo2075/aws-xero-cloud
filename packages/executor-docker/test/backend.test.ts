@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { WorkerSpec } from '@xero/execution';
-import { DockerBackend, buildRunArgs, serializeEnvFile, type CommandRunner } from '../src/index.js';
+import { DockerBackend, buildRunArgs, runtimeDied, serializeEnvFile, type CommandRunner } from '../src/index.js';
 
 const spec: WorkerSpec = {
   workerId: 'w1', functionId: 'fn_1', deploymentId: 'dep_1', functionName: 'hello',
@@ -172,6 +172,20 @@ describe('DockerBackend', () => {
     await expect(denied.pullImage('x')).rejects.toMatchObject({ code: 'WORKER_START_FAILED' });
     const down = new DockerBackend({ runner: async () => ({ stdout: '', stderr: 'failed to connect to the docker API at unix:///var/run/docker.sock', code: 1 }) });
     await expect(down.pullImage('x')).rejects.toMatchObject({ code: 'BACKEND_UNAVAILABLE' });
+  });
+
+  it('flags workers whose runtime process died (observed with the real AWS RIE) for recycling', async () => {
+    const enc = (o: unknown) => new TextEncoder().encode(JSON.stringify(o));
+    expect(runtimeDied(enc({ errorType: 'Runtime.ExitError', errorMessage: 'Error: Runtime exited with error: signal: killed' }))).toBe(true);
+    expect(runtimeDied(enc({ errorType: 'Runtime.OutOfMemory', errorMessage: 'x' }))).toBe(true);
+    expect(runtimeDied(enc({ errorType: 'Error', errorMessage: 'user error' }))).toBe(false);
+    expect(runtimeDied(enc({ ok: true }))).toBe(false);
+    expect(runtimeDied(new Uint8Array())).toBe(false);
+    const port = await listen((_q, s) => s.end(JSON.stringify({ errorType: 'Runtime.ExitError', errorMessage: 'signal: killed' })));
+    const b = new DockerBackend({ runner: fakeDocker(port).runner });
+    const h = await b.startWorker(spec);
+    const r = await b.invoke(h, { requestId: 'r', payload: Buffer.from('{}'), deadlineAt: Date.now() + 3000 });
+    expect(r).toMatchObject({ outcome: 'function-error', recycleWorker: true });
   });
 });
 

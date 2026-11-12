@@ -37,6 +37,8 @@ export interface WorkerInvokeResult {
   /** 'function-error' means the handler threw; payload is the error document. */
   outcome: 'ok' | 'function-error';
   payload: Uint8Array;
+  /** True when the runtime process died (e.g. OOM kill, process.exit): the worker must not be reused. */
+  recycleWorker?: boolean | undefined;
 }
 
 export interface ManagedWorkerInfo {

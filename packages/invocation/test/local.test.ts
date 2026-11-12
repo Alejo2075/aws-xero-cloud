@@ -56,6 +56,17 @@ describe('LocalTargetExecutor', () => {
     await expect(h.router.invoke({ functionName: 'f', payload: enc({}) })).resolves.toMatchObject({ status: 'succeeded' });
   });
 
+  it('discards a worker whose runtime process died, but still reports a Lambda-style function error', async () => {
+    const h = harness();
+    deploy(h);
+    h.backend.handler = () => ({ outcome: 'function-error', recycleWorker: true, payload: enc({ errorType: 'Runtime.ExitError', errorMessage: 'signal: killed' }) });
+    const r = await h.router.invoke({ functionName: 'f', payload: enc({}) });
+    expect(r.status).toBe('function-error');
+    expect(h.pool.stats().total).toBe(0);
+    h.backend.handler = (_s, req) => ({ outcome: 'ok', payload: req.payload });
+    expect((await h.router.invoke({ functionName: 'f', payload: enc({}) })).coldStart).toBe(true);
+  });
+
   it('bounds concurrency per function, queues, then rejects with CAPACITY_EXHAUSTED', async () => {
     const h = harness({ queueLimit: 1 });
     deploy(h, { maxConcurrency: 1, timeoutSec: 5 });
