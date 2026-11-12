@@ -21,6 +21,12 @@ describe('buildRunArgs', () => {
     expect(joined).not.toContain('docker.sock');
     expect(joined).not.toMatch(/--network\s+host/);
   });
+  it('selects an alternative OCI runtime (gVisor/Kata) only when configured', () => {
+    expect(buildRunArgs(spec, { pidsLimit: 256, tmpfsSizeMb: 512, user: '1000:1000' })).not.toContain('--runtime');
+    const a = buildRunArgs(spec, { pidsLimit: 256, tmpfsSizeMb: 512, user: '1000:1000', runtime: 'runsc' });
+    expect(a.slice(a.indexOf('--runtime'), a.indexOf('--runtime') + 2)).toEqual(['--runtime', 'runsc']);
+  });
+
   it('mounts only the artifact and never the home dir', () => {
     expect(args.filter((a) => a === '--volume')).toHaveLength(1);
   });
@@ -156,4 +162,16 @@ describe('DockerBackend', () => {
       { backendId: 'def', workerId: 'w8', running: false },
     ]);
   });
+
+  it('pulls images and maps failures', async () => {
+    const calls: string[][] = [];
+    const ok = new DockerBackend({ runner: async (_c, a) => { calls.push([...a]); return { stdout: '', stderr: '', code: 0 }; } });
+    await ok.pullImage('public.ecr.aws/lambda/nodejs:22');
+    expect(calls[0]).toEqual(['pull', '--quiet', 'public.ecr.aws/lambda/nodejs:22']);
+    const denied = new DockerBackend({ runner: async () => ({ stdout: '', stderr: 'pull access denied', code: 1 }) });
+    await expect(denied.pullImage('x')).rejects.toMatchObject({ code: 'WORKER_START_FAILED' });
+    const down = new DockerBackend({ runner: async () => ({ stdout: '', stderr: 'failed to connect to the docker API at unix:///var/run/docker.sock', code: 1 }) });
+    await expect(down.pullImage('x')).rejects.toMatchObject({ code: 'BACKEND_UNAVAILABLE' });
+  });
 });
+

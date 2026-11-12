@@ -27,6 +27,8 @@ export interface DockerBackendOptions {
   tmpfsSizeMb?: number;
   /** Container uid:gid. Non-root by default. */
   user?: string;
+  /** Alternative OCI runtime for stronger isolation, e.g. `runsc` (gVisor) or `kata`. Must be installed in the engine. */
+  runtime?: string | undefined;
   fetchImpl?: typeof fetch;
 }
 
@@ -37,7 +39,7 @@ export const LABEL_MANAGED = 'xero.managed';
 const RUNTIME_PORT = 8080;
 
 /** Pure function so the hardening flags are unit-testable without a Docker daemon. */
-export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsSizeMb: number; user: string; envFile?: string | undefined }): string[] {
+export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsSizeMb: number; user: string; envFile?: string | undefined; runtime?: string | undefined }): string[] {
   const cpus = Math.min(2, Math.max(0.1, spec.memoryMb / 1769)).toFixed(2);
   const args = [
     'run', '-d',
@@ -46,6 +48,7 @@ export function buildRunArgs(spec: WorkerSpec, opts: { pidsLimit: number; tmpfsS
     '--label', `xero.worker=${spec.workerId}`,
     '--label', `xero.function=${spec.functionId}`,
     '--label', `xero.deployment=${spec.deploymentId}`,
+    ...(opts.runtime ? ['--runtime', opts.runtime] : []),
     '--read-only',
     '--tmpfs', `/tmp:rw,nosuid,size=${opts.tmpfsSizeMb}m`,
     '--cap-drop', 'ALL',
@@ -80,6 +83,7 @@ export class DockerBackend implements ExecutionBackend {
   private readonly pidsLimit: number;
   private readonly tmpfsSizeMb: number;
   private readonly user: string;
+  private readonly runtime: string | undefined;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: DockerBackendOptions = {}) {
@@ -91,6 +95,7 @@ export class DockerBackend implements ExecutionBackend {
     this.pidsLimit = options.pidsLimit ?? 256;
     this.tmpfsSizeMb = options.tmpfsSizeMb ?? 512;
     this.user = options.user ?? '1000:1000';
+    this.runtime = options.runtime;
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
@@ -113,7 +118,7 @@ export class DockerBackend implements ExecutionBackend {
     try {
       const envFile = join(envDir, 'env');
       await writeFile(envFile, serializeEnvFile(spec.environment), { mode: 0o600 });
-      const args = buildRunArgs(spec, { pidsLimit: this.pidsLimit, tmpfsSizeMb: this.tmpfsSizeMb, user: this.user, envFile });
+      const args = buildRunArgs(spec, { pidsLimit: this.pidsLimit, tmpfsSizeMb: this.tmpfsSizeMb, user: this.user, envFile, runtime: this.runtime });
       run = await this.docker(args, undefined, 120_000); // first run may pull the image
     } finally {
       await rm(envDir, { recursive: true, force: true });
@@ -257,6 +262,14 @@ export class DockerBackend implements ExecutionBackend {
         const [backendId = '', workerId = '', state = ''] = line.split('\t');
         return { backendId, workerId, running: state === 'running' };
       });
+  }
+
+  async pullImage(image: string): Promise<void> {
+    const r = await this.docker(['pull', '--quiet', image], undefined, 600_000);
+    if (r.code !== 0) {
+      if (DAEMON_DOWN.test(r.stderr)) throw new XeroError('BACKEND_UNAVAILABLE', 'container engine is not reachable (is the Docker daemon running?)');
+      throw new XeroError('WORKER_START_FAILED', `failed to pull image ${image}`, { stderr: r.stderr.trim().slice(0, 300) });
+    }
   }
 
   async reap(backendId: string): Promise<void> {

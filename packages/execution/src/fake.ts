@@ -80,6 +80,11 @@ export class FakeExecutionBackend implements ExecutionBackend {
     return [...this.alive.keys()].map((backendId) => ({ backendId, workerId: this.alive.get(backendId)!.workerId, running: true }));
   }
 
+  readonly pulled: string[] = [];
+  async pullImage(image: string): Promise<void> {
+    this.pulled.push(image);
+  }
+
   async reap(backendId: string): Promise<void> {
     this.alive.delete(backendId);
     this.stopped.push(backendId);

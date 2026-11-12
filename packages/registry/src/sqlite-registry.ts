@@ -1,5 +1,5 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
   XeroError,
@@ -51,6 +51,14 @@ export class SqliteRegistry implements FunctionRegistry {
 
   close(): void {
     this.db.close();
+  }
+
+  /** Consistent online snapshot (`VACUUM INTO`). The destination must not exist. */
+  backupTo(destination: string): void {
+    if (existsSync(destination)) throw new XeroError('INVALID_REQUEST', 'backup destination already exists');
+    mkdirSync(dirname(destination), { recursive: true, mode: 0o700 });
+    this.db.exec(`VACUUM INTO '${destination.replaceAll("'", "''")}'`);
+    chmodSync(destination, 0o600);
   }
 
   get schemaVersion(): number {

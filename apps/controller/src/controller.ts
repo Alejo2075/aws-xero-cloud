@@ -52,7 +52,7 @@ export async function createController(overrides: ControllerOverrides = {}, env:
   const registry = new SqliteRegistry(join(config.home, 'xero.db'), { maxLogLines: config.maxLogLines, maxInvocations: config.maxInvocations });
   const artifacts = new DirectoryArtifactStore(join(config.home, 'artifacts'));
   const runtimes = new RuntimeCatalog([nodeRuntime, pythonRuntime]);
-  const backend = overrides.backend ?? new DockerBackend({ binary: config.dockerBinary });
+  const backend = overrides.backend ?? new DockerBackend({ binary: config.dockerBinary, runtime: config.dockerRuntime });
 
   const logWriter = new LogWriter(registry, redactor, { now: () => Date.now() }, logger);
   const scheduler = new ConcurrencyScheduler({ maxConcurrent: config.maxWorkers, queueLimit: config.queueLimit, metrics });
@@ -85,7 +85,7 @@ export async function createController(overrides: ControllerOverrides = {}, env:
     }),
   });
 
-  const service = new XeroService({ config, registry, artifacts, runtimes, router, pool, identity, lambda, events, metrics, logger });
+  const service = new XeroService({ config, registry, artifacts, runtimes, backend, backup: (dest) => registry.backupTo(dest), router, pool, identity, lambda, events, metrics, logger });
 
   // Reap workers orphaned by a previous controller run (best effort; a stopped engine must not block startup).
   try {

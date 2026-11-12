@@ -16,7 +16,7 @@ import {
   type LogicalFunction,
   type Logger,
 } from '@xero/core';
-import type { RuntimeCatalog } from '@xero/execution';
+import type { ExecutionBackend, RuntimeCatalog } from '@xero/execution';
 import type { InvocationRequest, InvocationResult, InvocationRouter } from '@xero/invocation';
 import type { WorkerPool } from '@xero/scaling';
 import type { AwsIdentity } from '@xero/aws-identity';
@@ -56,6 +56,9 @@ export interface ServiceDeps {
   registry: FunctionRegistry;
   artifacts: ArtifactStore;
   runtimes: RuntimeCatalog;
+  backend: ExecutionBackend;
+  /** Writes a consistent snapshot of the registry to the given path. */
+  backup: (destination: string) => void;
   router: InvocationRouter;
   pool: WorkerPool;
   identity: AwsIdentity;
@@ -278,6 +281,71 @@ export class XeroService {
 
   metricsSnapshot(): { series: ReturnType<MetricsRegistry['snapshot']>; workers: { total: number; busy: number; idle: number } } {
     return { series: this.d.metrics.snapshot(), workers: this.d.pool.stats() };
+  }
+
+  // ---------- operations ----------
+  /** Pre-pulls the base images of all supported runtimes (or the given ones). */
+  async pullImages(runtimes?: string[]): Promise<{ pulled: string[] }> {
+    if (!this.d.backend.pullImage) throw new XeroError('BACKEND_UNAVAILABLE', 'this execution backend cannot pre-pull images');
+    const wanted = (runtimes?.length ? runtimes : this.d.runtimes.supported()) as Parameters<RuntimeCatalog['adapterFor']>[0][];
+    const images = [...new Set(wanted.map((r) => this.d.runtimes.adapterFor(r).imageFor(r)))];
+    for (const image of images) await this.d.backend.pullImage(image);
+    return { pulled: images };
+  }
+
+  /** Consistent registry snapshot under `<home>/backups` (0600). Artifacts are content-addressed and not copied. */
+  createBackup(): { path: string } {
+    const stamp = new Date(this.clock.now()).toISOString().replace(/[:.]/g, '-');
+    const path = join(this.d.config.home, 'backups', `xero-${stamp}.db`);
+    this.d.backup(path);
+    return { path };
+  }
+
+  async ready(): Promise<{ ready: boolean; engine: boolean }> {
+    let engine = true;
+    try {
+      await this.d.backend.ping();
+    } catch {
+      engine = false;
+    }
+    let db = true;
+    try {
+      this.d.registry.listFunctions();
+    } catch {
+      db = false;
+    }
+    return { ready: db, engine };
+  }
+
+  /** Self-diagnosis for operators. Contains no secrets. */
+  async doctor(): Promise<{ ok: boolean; checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; detail: string }> }> {
+    const checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; detail: string }> = [];
+    try {
+      await this.d.backend.ping();
+      checks.push({ name: 'container-engine', status: 'ok', detail: 'reachable' });
+    } catch (e) {
+      checks.push({ name: 'container-engine', status: 'fail', detail: e instanceof XeroError ? `${e.code}: ${e.message}` : 'unreachable' });
+    }
+    try {
+      const n = this.d.registry.listFunctions().length;
+      checks.push({ name: 'database', status: 'ok', detail: `${n} function(s)` });
+    } catch {
+      checks.push({ name: 'database', status: 'fail', detail: 'registry not readable' });
+    }
+    const aws = await this.awsStatus();
+    checks.push(
+      !aws.connected
+        ? { name: 'aws', status: 'ok', detail: 'not connected (local-only mode)' }
+        : aws.valid
+          ? { name: 'aws', status: 'ok', detail: `connected to account ${aws.connection?.accountId}` }
+          : { name: 'aws', status: 'warn', detail: `credentials not valid (${aws.error}); local functions are unaffected` },
+    );
+    const sources = this.d.registry.listEventSources();
+    const down = sources.filter((s) => !this.d.events.status(s.id).running);
+    checks.push({ name: 'event-sources', status: down.length ? 'warn' : 'ok', detail: `${sources.length - down.length}/${sources.length} running` });
+    const w = this.d.pool.stats();
+    checks.push({ name: 'workers', status: 'ok', detail: `${w.total} running (${w.busy} busy), limit ${this.d.config.maxWorkers}` });
+    return { ok: checks.every((c) => c.status !== 'fail'), checks };
   }
 
   // ---------- AWS ----------

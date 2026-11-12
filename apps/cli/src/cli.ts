@@ -29,6 +29,9 @@ Usage: xero <command> [options]            (add --json for machine-readable outp
   events attach <name> --source sqs --queue-url URL [--target T] [--batch-size N] [--max-in-flight N]
                        [--visibility-extension S] | list | detach <id>
   metrics [--prometheus]
+  images pull [RUNTIME...]      pre-pull base images (avoids a slow first cold start)
+  backup                        snapshot the registry (restore: xero-controller restore --from FILE)
+  doctor                        check engine, database, AWS and event sources
   status
 
 Environment: XERO_URL (default http://127.0.0.1:7777), XERO_TOKEN or XERO_HOME (token file written by the controller).
@@ -304,6 +307,29 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
           print(`\nworkers: ${m.workers.total} total, ${m.workers.busy} busy, ${m.workers.idle} idle`);
         }
         return 0;
+      }
+
+      case 'images': {
+        const [sub, ...args] = rest;
+        if (sub !== 'pull') throw new CliUsageError('usage: xero images pull [RUNTIME...]');
+        const { values, positionals } = parse(args, {});
+        const r = await (await io.client()).pullImages(positionals.length ? positionals : undefined);
+        out(values, r, () => `Pulled:\n${r.pulled.map((i) => `  ${i}`).join('\n')}`);
+        return 0;
+      }
+
+      case 'backup': {
+        const { values } = parse(rest, {});
+        const r = await (await io.client()).createBackup();
+        out(values, r, () => `Backup written to ${r.path}\nArtifacts are content-addressed and are not included. Restore (controller stopped): xero-controller restore --from ${r.path}`);
+        return 0;
+      }
+
+      case 'doctor': {
+        const { values } = parse(rest, {});
+        const r = await (await io.client()).doctor();
+        out(values, r, () => r.checks.map((c) => `${c.status === 'ok' ? 'ok  ' : c.status === 'warn' ? 'WARN' : 'FAIL'}  ${clean(c.name).padEnd(17)} ${clean(c.detail)}`).join('\n'));
+        return r.ok ? 0 : 1;
       }
 
       case 'status': {

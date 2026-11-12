@@ -97,4 +97,19 @@ describe('SqliteRegistry', () => {
     expect(r.listEventSources(fn.id)).toHaveLength(1);
     expect(r.deleteEventSource('es_1')).toBe(true);
   });
+
+  it('creates consistent online backups that open as a registry', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'xero-reg-')); dirs.push(dir);
+    const r = new SqliteRegistry(join(dir, 'live.db'));
+    const fn = r.createFunction({ name: 'snap', description: undefined, routing });
+    r.addDeployment(fn.id, { target: 'local', config: local('sha256:s') });
+    const dest = join(dir, "it's here", 'b.db'); // quote in path must not break the statement
+    r.backupTo(dest);
+    expect(() => r.backupTo(dest)).toThrowError(expect.objectContaining({ code: 'INVALID_REQUEST' }));
+    r.createFunction({ name: 'later', description: undefined, routing });
+    const b = new SqliteRegistry(dest);
+    expect(b.listFunctions().map((f) => f.name)).toEqual(['snap']); // snapshot is point-in-time
+    b.close();
+    r.close();
+  });
 });

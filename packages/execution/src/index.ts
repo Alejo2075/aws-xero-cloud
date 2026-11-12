@@ -62,6 +62,8 @@ export interface ExecutionBackend {
   listManaged(): Promise<ManagedWorkerInfo[]>;
   /** Removes a managed worker by backend id (orphan reaping). */
   reap(backendId: string): Promise<void>;
+  /** Pre-pulls an image so the first cold start does not pay for the download. Optional. */
+  pullImage?(image: string): Promise<void>;
 }
 
 export interface RuntimeAdapter {

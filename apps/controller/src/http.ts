@@ -161,6 +161,10 @@ export function createHttpServer({ service, token, logger }: HttpOptions): Serve
     } else ok(res, service.metricsSnapshot());
   });
 
+  on('POST', '/v1/images/pull', async ({ req, res }) => ok(res, await service.pullImages((await readJson(req, z.object({ runtimes: z.array(z.string()).max(16).optional() }).strict())).runtimes)));
+  on('POST', '/v1/backups', async ({ res }) => ok(res, service.createBackup(), 201));
+  on('GET', '/v1/doctor', async ({ res }) => ok(res, await service.doctor()));
+
   on('GET', '/v1/aws/connection', async ({ res }) => ok(res, await service.awsStatus()));
   on('PUT', '/v1/aws/connection', async ({ req, res }) => ok(res, await service.connectAws(await readJson(req, awsConnectionRequestSchema))));
   on('DELETE', '/v1/aws/connection', async ({ res }) => {
@@ -185,6 +189,10 @@ export function createHttpServer({ service, token, logger }: HttpOptions): Serve
         if (req.headers.origin !== undefined) throw new HttpError('UNAUTHENTICATED', 'browser-originated requests are not accepted');
         const url = new URL(req.url ?? '/', 'http://localhost');
         if (req.method === 'GET' && url.pathname === '/v1/health') return send(res, 200, { status: 'ok', version: API_VERSION_STRING });
+        if (req.method === 'GET' && url.pathname === '/v1/ready') {
+          const r = await service.ready();
+          return send(res, r.ready ? 200 : 503, r);
+        }
         if (!tokenMatches(token, req.headers.authorization)) throw new XeroError('UNAUTHENTICATED', 'missing or invalid bearer token');
         for (const r of routes) {
           if (r.method !== req.method) continue;

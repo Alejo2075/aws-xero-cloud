@@ -212,6 +212,17 @@ export class XeroClient {
     return this.json('GET', '/v1/metrics');
   }
 
+  // operations
+  pullImages(runtimes?: string[]): Promise<{ pulled: string[] }> {
+    return this.json('POST', '/v1/images/pull', runtimes ? { runtimes } : {});
+  }
+  createBackup(): Promise<{ path: string }> {
+    return this.json('POST', '/v1/backups', {});
+  }
+  doctor(): Promise<{ ok: boolean; checks: Array<{ name: string; status: 'ok' | 'warn' | 'fail'; detail: string }> }> {
+    return this.json('GET', '/v1/doctor');
+  }
+
   // AWS (opt-in)
   awsStatus(): Promise<AwsStatus> {
     return this.json('GET', '/v1/aws/connection');
