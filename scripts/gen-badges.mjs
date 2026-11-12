@@ -8,7 +8,7 @@ import { join } from 'node:path';
 const OUT = join(import.meta.dirname, '..', 'docs', 'assets', 'badges');
 const BADGES = [
   ['license', 'LICENSE', 'APACHE-2.0'],
-  ['status', 'STATUS', 'V0.1 PRE-RELEASE'],
+  ['version', 'VERSION', '0.1'],
   ['node', 'NODE', '>= 24'],
   ['execution', 'EXECUTION', 'LOCAL CONTAINERS'],
   ['aws', 'AWS', 'OPT-IN'],

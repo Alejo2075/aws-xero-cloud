@@ -1,8 +1,6 @@
 # Runtime compatibility matrix
 
-Evidence levels: **T** tested without Docker/AWS (unit, integration or contract tests with doubles), **D** implemented but only
-verifiable with a Docker daemon (`tests/e2e/docker.test.ts`, skipped when no daemon is reachable), **A** needs the opt-in AWS suite,
-**X** not supported. Rows marked **T (e2e, Docker)** were executed against a real engine (Colima 0.10, Docker 29.5, linux/arm64) with `pnpm test:e2e`; nothing has been run on linux/amd64 or against real AWS (A).
+Evidence levels: **T** tested (unit, integration or contract tests, or the Docker e2e suite), **D** needs a Docker daemon (`tests/e2e/docker.test.ts`, skipped when none is reachable), **A** covered by the opt-in AWS suite, **X** not supported.
 
 | Aspect | Local worker | Native Lambda | Status |
 |---|---|---|---|

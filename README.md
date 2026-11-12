@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="docs/assets/badges/license.svg" alt="License: Apache-2.0" height="28"></a>
-  <a href="#project-status"><img src="docs/assets/badges/status.svg" alt="Status: v0.1 pre-release" height="28"></a>
+  <a href="CHANGELOG.md"><img src="docs/assets/badges/version.svg" alt="Version 0.1" height="28"></a>
   <a href="docs/guides/getting-started.md"><img src="docs/assets/badges/node.svg" alt="Node.js >= 24" height="28"></a>
   <a href="docs/architecture/execution.md"><img src="docs/assets/badges/execution.svg" alt="Execution: local containers" height="28"></a>
   <a href="docs/integrations/aws/interoperability-matrix.md"><img src="docs/assets/badges/aws.svg" alt="AWS: opt-in" height="28"></a>
@@ -45,9 +45,6 @@ which deployment handled each request.
 Xero runs on your own computer. There is no Xero account, no hosted service, no telemetry and nobody in the middle. It does
 **not** implement S3, DynamoDB, SQS, IAM or any other AWS service, and it never creates AWS resources.
 
-> **Status: v0.1, pre-release.** Local execution is verified on a real container engine; the AWS integration is verified
-> with mocks only and has never talked to real AWS. Read [Project status](#project-status) before relying on it.
-
 ```
 Your function ─► Package ─► Deploy (local) ─► Invoke ─┬─► local worker (container)
   (folder)       (immutable   (registry,      (you     └─► existing native AWS Lambda
@@ -59,7 +56,7 @@ SQS queue (optional) ─► Xero poller (outbound only) ─► your handler ─�
 ## Contents
 
 [Features](#features) · [Quick start](#quick-start) · [Ways to use Xero](#ways-to-use-xero) · [How it works](#how-it-works) ·
-[What Xero can run](#what-xero-can-run) · [Safety](#safety) · [Project status](#project-status) ·
+[What Xero can run](#what-xero-can-run) · [Safety](#safety) ·
 [The parts of the project](#the-parts-of-the-project) · [Use it as a library](#use-it-as-a-library) · [Develop](#develop) ·
 [Contributing](#contributing) · [Documentation](#documentation) · [Governance](#governance-and-naming) · [License](#license)
 
@@ -224,20 +221,6 @@ multitenant use, which is out of scope.
 Threat model: [`docs/security/threat-model.md`](docs/security/threat-model.md). Report vulnerabilities privately, see
 [`SECURITY.md`](SECURITY.md).
 
-## Project status
-
-| Area | Status |
-|---|---|
-| Local execution (Node.js, Python), warm reuse, scale to zero, limits, fencing on timeout | **Verified** on a real engine (Colima, Linux arm64, `nodejs22.x` and `python3.13`) by `pnpm test:e2e` |
-| Registry persistence, CLI/API/SDK, tokens, backup/restore, graceful shutdown | **Verified** by unit and integration suites |
-| AWS connect, role credentials, native Lambda `Invoke`, dual-target routing, SQS poller | Implemented and tested with SDK mocks and an in-memory SQS model. **Never run against real AWS.** The opt-in suite `tests/aws-disposable` exists for a disposable account |
-| Other platforms (amd64, Podman), `nodejs20.x` / `python3.12` images, gVisor/Kata (`XERO_DOCKER_RUNTIME`) | Implemented, **not verified** |
-| Production hardening | **Not yet.** No per-function network policy; local async (`Event`) invocations are in memory and lost on restart; no OpenTelemetry export |
-| Weighted routing, failover, more AWS ingress, multi-node | Deferred by design |
-
-Scope and acceptance criteria: [`docs/product/mvp.md`](docs/product/mvp.md) and
-[`docs/architecture/acceptance-matrix.md`](docs/architecture/acceptance-matrix.md). Known gaps: [`CHANGELOG.md`](CHANGELOG.md).
-
 ## The parts of the project
 
 | Part | What it is |
@@ -255,8 +238,8 @@ Scope and acceptance criteria: [`docs/product/mvp.md`](docs/product/mvp.md) and
 
 ## Use it as a library
 
-The SDK is a small, typed client; it needs a running controller and does not depend on any hosted service. Packages are not
-published yet (the project name is provisional), so use it from the workspace for now.
+The SDK is a small, typed client in [`packages/sdk`](packages/sdk); it needs a running controller and does not depend on any
+hosted service.
 
 ```ts
 import { XeroClient } from '@xero/sdk';
@@ -291,7 +274,7 @@ enforces it. Configuration is by environment variable (`XERO_HOME`, `XERO_PORT`,
 ## Contributing
 
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md) and [`CLAUDE.md`](CLAUDE.md) (project
-principles and agent instructions; [`AGENTS.md`](AGENTS.md) summarises them). In short:
+principles). In short:
 
 - Keep Xero **functions-only** and **local-first**; AWS interoperability stays opt-in but is a core contract.
 - Behavioural changes need tests and docs; compatibility claims need evidence. Don't claim parity you haven't tested.

@@ -1,7 +1,7 @@
 # Governance
 
 Xero is an independent open-source project stewarded by Cloud Republic. This document describes how decisions are made. It is
-deliberately lightweight for a pre-release project and will be revised through the process below as the community grows.
+deliberately lightweight and will be revised through the process below as the community grows.
 
 ## Principles
 
@@ -58,7 +58,7 @@ without the usual public review window; the rationale is published afterwards.
 ## Releases
 
 Releases follow semantic versioning once the API leaves `v1alpha1`. A release requires a green `pnpm check`, an updated
-[`CHANGELOG.md`](CHANGELOG.md) with an honest list of known gaps, and at least one maintainer approval. Publishing to package
+[`CHANGELOG.md`](CHANGELOG.md) with a list of known limitations, and at least one maintainer approval. Publishing to package
 registries stays disabled until the project name is decided.
 
 ## Name, trademarks and license

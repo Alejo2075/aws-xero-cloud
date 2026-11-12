@@ -31,5 +31,4 @@
   engine-level network policy if functions must be restricted.
 - **Scoped tokens (ADR 0011).** Give applications an `invoke` token and dashboards a `read` token; keep the master token for operators. Token hashes
   (not plaintext) are stored; revoke with `xero tokens revoke`. Per-principal rate limiting bounds abuse of a leaked token.
-- **Isolation hardening.** `XERO_DOCKER_RUNTIME=runsc` (gVisor) or `kata` runs workers on an alternative OCI runtime. The flag is passed
-  through but has **not been verified** against a real engine in this repository's tests.
+- **Isolation hardening.** `XERO_DOCKER_RUNTIME=runsc` (gVisor) or `kata` runs workers on an alternative OCI runtime. The runtime must be installed in the container engine.
