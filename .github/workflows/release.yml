@@ -23,7 +23,7 @@ jobs:
       - run: pnpm audit --prod --audit-level high
       - name: SBOM (CycloneDX 1.5, production dependencies, generated from pnpm-lock.yaml)
         run: node scripts/gen-sbom.mjs --output sbom.cdx.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: sbom, path: sbom.cdx.json }
       - name: Attach SBOM to the GitHub release (tag pushes only)
         if: ${{ github.event_name == 'push' }}
