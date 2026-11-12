@@ -1,0 +1,63 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Do not paste credentials, tokens, AWS keys or request payloads.** Redact account IDs and ARNs if they are sensitive.
+        Security vulnerabilities must be reported privately (see SECURITY.md), not here.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: What did you do, and what did you see?
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Commands, a minimal function (or manifest) and the payload shape. The smaller the better.
+      placeholder: |
+        1. xero deploy ./examples/node-hello
+        2. xero invoke hello --payload '{...}'
+    validations: { required: true }
+  - type: dropdown
+    id: target
+    attributes:
+      label: Which target is involved?
+      options: [local, aws-lambda, SQS event source, controller / API / CLI, not sure]
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Xero version or commit
+      placeholder: "0.1.0 or the output of `git rev-parse --short HEAD`"
+    validations: { required: true }
+  - type: input
+    id: platform
+    attributes:
+      label: OS and architecture
+      placeholder: "macOS 15 arm64, Ubuntu 24.04 amd64, ..."
+    validations: { required: true }
+  - type: input
+    id: engine
+    attributes:
+      label: Container engine and version
+      placeholder: "Colima 0.10 / Docker 29.5, Docker Desktop, Podman ..."
+  - type: input
+    id: node
+    attributes:
+      label: Node.js and pnpm versions
+      placeholder: "node 24.x, pnpm 9.15"
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Output of `xero doctor` and relevant logs
+      description: Error code and request ID (for example `WORKER_START_FAILED`, `req_...`) are especially useful. Logs are redacted by Xero but please double check.
+      render: text

@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose an improvement or a new capability
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Xero is **functions-only** and **local-first**; AWS interoperability is opt-in. Requests that turn Xero into a general cloud service,
+        emulate an AWS service, or create AWS resources automatically are out of scope. See `docs/product/mvp.md` and `GOVERNANCE.md`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Behaviour you would expect, including routing/target semantics and failure modes if relevant.
+    validations: { required: true }
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Local execution, Hybrid routing, AWS integration, SQS / event sources, CLI / API / SDK, Security, Operations, Documentation, Other]
+    validations: { required: true }
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This keeps Xero functions-only and does not require creating AWS resources automatically.
+          required: true
+        - label: I understand that larger changes may need an ADR or RFC first (see GOVERNANCE.md).
+          required: true
