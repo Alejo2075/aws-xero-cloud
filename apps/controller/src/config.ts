@@ -14,6 +14,14 @@ export interface ControllerConfig {
   /** If non-empty, bindings / event sources are restricted to these regions. */
   allowedRegions: string[];
   dockerBinary: string;
+  /** Max log lines kept per function. */
+  maxLogLines: number;
+  /** Max invocation records kept per function. */
+  maxInvocations: number;
+  /** How long shutdown waits for in-flight invocations. */
+  drainTimeoutMs: number;
+  /** Optional OCI runtime for stronger isolation (e.g. runsc for gVisor). */
+  dockerRuntime: string | undefined;
 }
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost']);
@@ -45,6 +53,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, overrides: Part
     allowedAccountIds: list(env.XERO_ALLOWED_ACCOUNTS),
     allowedRegions: list(env.XERO_ALLOWED_REGIONS),
     dockerBinary: env.XERO_DOCKER_BIN ?? 'docker',
+    maxLogLines: int(env.XERO_MAX_LOG_LINES, 5000, 100, 1_000_000, 'XERO_MAX_LOG_LINES'),
+    maxInvocations: int(env.XERO_MAX_INVOCATIONS, 2000, 10, 1_000_000, 'XERO_MAX_INVOCATIONS'),
+    drainTimeoutMs: int(env.XERO_DRAIN_TIMEOUT_MS, 10_000, 0, 600_000, 'XERO_DRAIN_TIMEOUT_MS'),
+    dockerRuntime: env.XERO_DOCKER_RUNTIME || undefined,
     ...overrides,
   };
   assertLoopback(cfg.host);

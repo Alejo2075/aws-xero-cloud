@@ -41,7 +41,34 @@ export class InvocationRouter {
     this.ids = o.ids ?? newId;
   }
 
-  async invoke(req: InvocationRequest): Promise<InvocationResult> {
+  private readonly inFlight = new Set<Promise<unknown>>();
+
+  private track<T>(p: Promise<T>): Promise<T> {
+    this.inFlight.add(p);
+    const done = (): void => void this.inFlight.delete(p);
+    p.then(done, done);
+    return p;
+  }
+
+  /** Number of invocations (and accepted async runs) still executing. */
+  get pending(): number {
+    return this.inFlight.size;
+  }
+
+  /** Waits until in-flight work finishes or the timeout elapses. Returns true when fully drained. */
+  async drain(timeoutMs: number): Promise<boolean> {
+    const end = this.clock.now() + timeoutMs;
+    while (this.inFlight.size > 0 && this.clock.now() < end) {
+      await Promise.race([Promise.allSettled([...this.inFlight]), new Promise((r) => setTimeout(r, 50))]);
+    }
+    return this.inFlight.size === 0;
+  }
+
+  invoke(req: InvocationRequest): Promise<InvocationResult> {
+    return this.track(this.run(req));
+  }
+
+  private async run(req: InvocationRequest): Promise<InvocationResult> {
     const { registry } = this.o;
     const fn = registry.getFunctionByName(req.functionName);
     if (!fn) throw new XeroError('FUNCTION_NOT_FOUND', `function "${req.functionName}" not found`);
@@ -110,7 +137,7 @@ export class InvocationRouter {
     if (result.settled) {
       // Asynchronous acceptance: answer now, record the real outcome when it settles.
       finish({ ...record(result), status: 'accepted' });
-      result.settled.then(
+      this.track(result.settled).then(
         (o) => this.o.registry.recordInvocation({ ...base, ...record(o), attemptId: `${attemptId}.run`, durationMs: this.clock.now() - startedAt }),
         (e: unknown) => {
           const code = isXeroError(e) ? e.code : 'INTERNAL';

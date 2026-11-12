@@ -126,4 +126,20 @@ describe('InvocationRouter — one logical function, two targets', () => {
   it('unknown function', async () => {
     await expect(harness().router.invoke({ functionName: 'nope', payload: enc({}) })).rejects.toMatchObject({ code: 'FUNCTION_NOT_FOUND' });
   });
+
+  it('drain waits for in-flight invocations (graceful shutdown)', async () => {
+    const h = harness();
+    hybrid(h);
+    let release!: () => void;
+    h.backend.handler = () => new Promise((r) => { release = () => r({ outcome: 'ok', payload: enc({}) }); });
+    const p = h.router.invoke({ functionName: 'hello', target: 'local', payload: enc({}) });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(h.router.pending).toBe(1);
+    expect(await h.router.drain(60)).toBe(false); // still running at the deadline
+    const drained = h.router.drain(2000);
+    release();
+    await p;
+    expect(await drained).toBe(true);
+    expect(h.router.pending).toBe(0);
+  });
 });

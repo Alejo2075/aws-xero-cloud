@@ -43,7 +43,7 @@ export function deploymentView(d: Deployment): DeploymentView {
       ...base,
       details: {
         runtime: c.runtime, handler: c.handler, artifactId: c.artifactId, memoryMb: c.memoryMb, timeoutSec: c.timeoutSec,
-        maxConcurrency: c.maxConcurrency, idleTtlSec: c.idleTtlSec, environmentKeys: Object.keys(c.environment).sort(), awsRoleArn: c.awsRoleArn ?? null,
+        maxConcurrency: c.maxConcurrency, idleTtlSec: c.idleTtlSec, minWarm: c.minWarm ?? 0, environmentKeys: Object.keys(c.environment).sort(), awsRoleArn: c.awsRoleArn ?? null,
       },
     };
   }
@@ -129,6 +129,8 @@ export class XeroService {
     if (!found.some(Boolean)) {
       throw new XeroError('ARTIFACT_INVALID', `handler file for "${req.handler}" not found in the artifact (looked for ${adapter.handlerFileCandidates(req.handler).join(', ')})`);
     }
+    const minWarm = req.minWarm ?? 0;
+    if (minWarm > (req.maxConcurrency ?? 2)) throw new XeroError('INVALID_REQUEST', 'minWarm cannot exceed maxConcurrency');
     const warnings: string[] = [];
     let fn = this.d.registry.getFunctionByName(name);
     const aws = fn ? this.d.registry.getActiveDeployment(fn.id, 'aws-lambda') : undefined;
@@ -144,7 +146,7 @@ export class XeroService {
       target: 'local',
       config: {
         artifactId: artifact.id, runtime: req.runtime, handler: req.handler, memoryMb: req.memoryMb ?? 128, timeoutSec: req.timeoutSec ?? 3,
-        maxConcurrency: req.maxConcurrency ?? 2, idleTtlSec: req.idleTtlSec ?? 60, environment: req.environment ?? {}, awsRoleArn: req.awsRoleArn,
+        maxConcurrency: req.maxConcurrency ?? 2, idleTtlSec: req.idleTtlSec ?? 60, minWarm, environment: req.environment ?? {}, awsRoleArn: req.awsRoleArn,
       },
     });
     if (previous) await this.d.pool.retireDeployment(previous.id);

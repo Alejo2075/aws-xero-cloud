@@ -18,7 +18,7 @@ const USAGE = `xero — your hardware, your Lambdas.
 Usage: xero <command> [options]            (add --json for machine-readable output)
 
   deploy <dir> [--name N] [--runtime R] [--handler H] [--memory MB] [--timeout S] [--concurrency N]
-               [--idle-ttl S] [--env K=V]... [--role ARN] [--default-target local|aws-lambda]
+               [--idle-ttl S] [--min-warm N] [--env K=V]... [--role ARN] [--default-target local|aws-lambda]
   update <name> <dir> [same flags as deploy]
   invoke <name> [--payload JSON | --payload-file F | --payload -] [--target local|aws-lambda] [--async] [--trace ID]
   logs <name> [--limit N] [--follow]
@@ -72,7 +72,7 @@ function envPairs(list: unknown): Record<string, string> | undefined {
 
 const DEPLOY_OPTIONS = {
   name: { type: 'string' }, runtime: { type: 'string' }, handler: { type: 'string' }, memory: { type: 'string' }, timeout: { type: 'string' },
-  concurrency: { type: 'string' }, 'idle-ttl': { type: 'string' }, env: { type: 'string', multiple: true }, role: { type: 'string' },
+  concurrency: { type: 'string' }, 'idle-ttl': { type: 'string' }, 'min-warm': { type: 'string' }, env: { type: 'string', multiple: true }, role: { type: 'string' },
   'default-target': { type: 'string' }, description: { type: 'string' },
 } as const;
 
@@ -114,6 +114,7 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
           ...(num(values.timeout, 'timeout') ?? local?.timeoutSec ? { timeoutSec: num(values.timeout, 'timeout') ?? local?.timeoutSec } : {}),
           ...(num(values.concurrency, 'concurrency') ?? local?.maxConcurrency ? { maxConcurrency: num(values.concurrency, 'concurrency') ?? local?.maxConcurrency } : {}),
           ...(num(values['idle-ttl'], 'idle-ttl') ?? local?.idleTtlSec !== undefined ? { idleTtlSec: num(values['idle-ttl'], 'idle-ttl') ?? local?.idleTtlSec } : {}),
+          ...(num(values['min-warm'], 'min-warm') ?? local?.minWarm ? { minWarm: num(values['min-warm'], 'min-warm') ?? local?.minWarm } : {}),
           ...(Object.keys(env).length ? { environment: env } : {}),
           ...((values.role as string | undefined) ?? local?.awsRoleArn ? { awsRoleArn: (values.role as string | undefined) ?? local?.awsRoleArn } : {}),
           ...(defaultTarget && defaultTarget !== 'aws-lambda' ? { defaultTarget } : {}),

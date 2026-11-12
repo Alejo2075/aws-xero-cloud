@@ -7,6 +7,7 @@ export interface PooledWorker {
   deploymentId: string;
   functionId: string;
   idleTtlMs: number;
+  minWarm: number;
   /** Epoch ms when injected credentials expire; undefined when none were injected. */
   credentialsExpireAt: number | undefined;
   invocations: number;
@@ -22,6 +23,8 @@ export interface WorkerRequest {
   deploymentId: string;
   functionId: string;
   idleTtlMs: number;
+  /** Keep at least this many workers of the deployment alive (never reaped by the idle TTL). */
+  minWarm?: number | undefined;
   /** Builds the spec (may issue credentials). Called only on a cold start. */
   build(workerId: string): Promise<{ spec: WorkerSpec; credentialsExpireAt?: number | undefined }>;
 }
@@ -107,6 +110,7 @@ export class WorkerPool {
       deploymentId: req.deploymentId,
       functionId: req.functionId,
       idleTtlMs: req.idleTtlMs,
+      minWarm: req.minWarm ?? 0,
       credentialsExpireAt,
       invocations: 0,
       lastUsedAt: this.clock.now(),
@@ -140,7 +144,7 @@ export class WorkerPool {
     worker.lastUsedAt = this.clock.now();
     worker.lastRequestId = outcome.requestId ?? worker.lastRequestId;
     worker.busy = false;
-    if (!outcome.healthy || worker.retired || worker.idleTtlMs === 0) {
+    if (!outcome.healthy || worker.retired || (worker.idleTtlMs === 0 && worker.minWarm === 0)) {
       await this.stop(worker, outcome.healthy ? (worker.retired ? 'retired' : 'ttl0') : 'unhealthy');
     }
     this.publish();
@@ -152,6 +156,8 @@ export class WorkerPool {
     let n = 0;
     for (const w of [...this.workers]) {
       if (!w.busy && now - w.lastUsedAt >= w.idleTtlMs) {
+        const siblings = [...this.workers].filter((x) => x.deploymentId === w.deploymentId).length;
+        if (!w.retired && siblings <= w.minWarm) continue; // keep the configured warm floor
         await this.stop(w, 'idle_ttl');
         n += 1;
       }

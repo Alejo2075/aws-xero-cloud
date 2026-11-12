@@ -70,6 +70,7 @@ export const localDeploymentSpecSchema = z
     timeoutSec: z.number().int().min(1).max(900).default(3),
     maxConcurrency: z.number().int().min(1).max(100).default(2),
     idleTtlSec: z.number().int().min(0).max(3600).default(60),
+    minWarm: z.number().int().min(0).max(100).default(0),
     environment: environmentSchema.default({}),
     awsRoleArn: roleArnSchema.optional(),
   })
@@ -116,6 +117,7 @@ export const deployLocalRequestSchema = z
     timeoutSec: localDeploymentSpecSchema.shape.timeoutSec.optional(),
     maxConcurrency: localDeploymentSpecSchema.shape.maxConcurrency.optional(),
     idleTtlSec: localDeploymentSpecSchema.shape.idleTtlSec.optional(),
+    minWarm: localDeploymentSpecSchema.shape.minWarm.optional(),
     environment: environmentSchema.optional(),
     awsRoleArn: roleArnSchema.optional(),
     defaultTarget: targetSchema.optional(),

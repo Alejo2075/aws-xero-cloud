@@ -3,8 +3,8 @@ import { FakeExecutionBackend, type WorkerSpec } from '@xero/execution';
 import { WorkerPool, type WorkerRequest } from '../src/index.js';
 
 const spec = (workerId: string, deploymentId = 'dep_1'): WorkerSpec => ({ workerId, functionId: 'fn_1', deploymentId, functionName: 'f', image: 'img', command: ['h'], artifactPath: '/a', memoryMb: 128, timeoutSec: 3, environment: {} });
-const req = (deploymentId = 'dep_1', idleTtlMs = 60_000, expires?: number): WorkerRequest => ({
-  deploymentId, functionId: 'fn_1', idleTtlMs,
+const req = (deploymentId = 'dep_1', idleTtlMs = 60_000, expires?: number, minWarm = 0): WorkerRequest => ({
+  deploymentId, functionId: 'fn_1', idleTtlMs, minWarm,
   build: async (id) => ({ spec: spec(id, deploymentId), credentialsExpireAt: expires }),
 });
 function clock() { let t = 1_000_000; return { now: () => t, advance: (ms: number) => { t += ms; } }; }
@@ -111,5 +111,29 @@ describe('WorkerPool', () => {
     await pool.stopAll();
     backend.emitLog(a.worker.handle.backendId, 'stdout', 'after');
     expect(seen).toEqual(['hello']);
+  });
+
+  it('minWarm keeps a floor of workers alive past the idle TTL, but not above it', async () => {
+    const backend = new FakeExecutionBackend();
+    const c = clock();
+    const pool = new WorkerPool({ backend, maxWorkers: 4, clock: c });
+    const a = await pool.checkout(req('dep_1', 1000, undefined, 1));
+    const b = await pool.checkout(req('dep_1', 1000, undefined, 1));
+    await pool.checkin(a.worker, { healthy: true });
+    await pool.checkin(b.worker, { healthy: true });
+    c.advance(5000);
+    expect(await pool.reapIdle()).toBe(1); // one is reaped, the floor of 1 stays
+    expect(pool.stats().total).toBe(1);
+    c.advance(60_000);
+    expect(await pool.reapIdle()).toBe(0);
+    await pool.retireDeployment('dep_1'); // deployment replaced: the floor no longer applies
+    expect(pool.stats().total).toBe(0);
+  });
+
+  it('minWarm also survives idleTtl=0', async () => {
+    const pool = new WorkerPool({ backend: new FakeExecutionBackend(), maxWorkers: 2 });
+    const a = await pool.checkout(req('dep_1', 0, undefined, 1));
+    await pool.checkin(a.worker, { healthy: true });
+    expect(pool.stats().total).toBe(1);
   });
 });

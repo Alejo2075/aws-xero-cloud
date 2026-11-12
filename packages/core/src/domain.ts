@@ -19,6 +19,8 @@ export interface LocalConfig {
   timeoutSec: number;
   maxConcurrency: number;
   idleTtlSec: number;
+  /** Workers kept alive past the idle TTL (absent in records created before v0.1.1 = 0). */
+  minWarm?: number | undefined;
   environment: Readonly<Record<string, string>>;
   awsRoleArn: string | undefined;
 }

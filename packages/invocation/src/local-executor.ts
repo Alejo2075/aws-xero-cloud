@@ -56,9 +56,11 @@ export class LocalTargetExecutor implements TargetExecutor {
       deploymentId: dep.id,
       functionId: dep.functionId,
       idleTtlMs: cfg.idleTtlSec * 1000,
+      minWarm: cfg.minWarm ?? 0,
       build: (workerId) => this.buildSpec(ctx, dep, workerId),
     });
     let healthy = true;
+    worker.lastRequestId = ctx.requestId; // set before dispatch so log lines emitted during the run are attributed to it
     try {
       const result = await this.o.pool.backendFor().invoke(worker.handle, {
         requestId: ctx.requestId,
@@ -66,7 +68,6 @@ export class LocalTargetExecutor implements TargetExecutor {
         deadlineAt: this.clock.now() + cfg.timeoutSec * 1000,
         signal: ctx.signal,
       });
-      worker.lastRequestId = ctx.requestId;
       return {
         status: result.outcome === 'ok' ? 'succeeded' : 'function-error',
         payload: result.payload,

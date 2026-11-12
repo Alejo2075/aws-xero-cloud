@@ -49,7 +49,7 @@ export async function createController(overrides: ControllerOverrides = {}, env:
   const metrics = new MetricsRegistry();
   const token = await ensureToken(config.home);
 
-  const registry = new SqliteRegistry(join(config.home, 'xero.db'));
+  const registry = new SqliteRegistry(join(config.home, 'xero.db'), { maxLogLines: config.maxLogLines, maxInvocations: config.maxInvocations });
   const artifacts = new DirectoryArtifactStore(join(config.home, 'artifacts'));
   const runtimes = new RuntimeCatalog([nodeRuntime, pythonRuntime]);
   const backend = overrides.backend ?? new DockerBackend({ binary: config.dockerBinary });
@@ -115,8 +115,14 @@ export async function createController(overrides: ControllerOverrides = {}, env:
     async close() {
       if (closed) return;
       closed = true;
-      await new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections(); });
+      // Graceful shutdown: stop accepting, stop pulling SQS work, let in-flight invocations finish, then force.
+      const closing = new Promise<void>((r) => server.close(() => r()));
+      server.closeIdleConnections();
       await events.stopAll();
+      const drained = await router.drain(config.drainTimeoutMs);
+      if (!drained) logger.warn('shutdown timed out with invocations still running', { pending: router.pending });
+      server.closeAllConnections();
+      await closing;
       await pool.stopAll();
       logWriter.stop();
       registry.close();

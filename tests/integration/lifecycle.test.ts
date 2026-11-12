@@ -141,3 +141,40 @@ describe('controller API security', () => {
     expect((e as XeroApiError).requestId).toMatch(/^req_/);
   });
 });
+
+describe('operational behaviour', () => {
+  it('attributes log lines emitted during an invocation to that invocation', async () => {
+    await env.client.deployLocal('attr', { runtime: 'nodejs22.x', handler: 'index.handler', sourcePath: node() });
+    env.backend.handler = (_s, r) => {
+      env.backend.emitLog([...env.backend.alive.keys()][0]!, 'stdout', `during ${r.requestId}`);
+      return { outcome: 'ok', payload: new TextEncoder().encode('{}') };
+    };
+    const first = await env.client.invoke('attr', {});
+    const second = await env.client.invoke('attr', {});
+    const logs = await waitFor(() => env.client.logs('attr'), (l) => l.length >= 2);
+    expect(logs.map((l) => l.requestId)).toEqual([first.requestId, second.requestId]);
+  });
+
+  it('shutdown waits for an in-flight invocation instead of dropping it', async () => {
+    await env.client.deployLocal('slow', { runtime: 'nodejs22.x', handler: 'index.handler', sourcePath: node(), timeoutSec: 5 });
+    let release!: () => void;
+    env.backend.handler = () => new Promise((r) => { release = () => r({ outcome: 'ok', payload: new TextEncoder().encode('{"done":true}') }); });
+    const inflight = env.client.invoke<{ done: boolean }>('slow', {});
+    await new Promise((r) => setTimeout(r, 50));
+    const closing = env.controller.close();
+    setTimeout(() => release(), 100);
+    await expect(inflight).resolves.toMatchObject({ status: 'succeeded', payload: { done: true } });
+    await closing;
+    env = await createEnv(); // fresh env for afterEach
+  });
+
+  it('minWarm is validated, stored and shown', async () => {
+    await expect(env.client.deployLocal('w', { runtime: 'nodejs22.x', handler: 'index.handler', sourcePath: node(), maxConcurrency: 1, minWarm: 2 })).rejects.toMatchObject({ code: 'INVALID_REQUEST' });
+    const r = await env.client.deployLocal('w', { runtime: 'nodejs22.x', handler: 'index.handler', sourcePath: node(), maxConcurrency: 2, minWarm: 1, idleTtlSec: 0 });
+    expect(r.function.deployments.local!.details).toMatchObject({ minWarm: 1 });
+    await env.client.invoke('w', {});
+    await new Promise((r) => setTimeout(r, 1200));
+    expect(env.backend.alive.size).toBe(1); // idleTtl 0 would normally stop it immediately
+  });
+});
+
