@@ -1,5 +1,7 @@
 # Contributing
 
+By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). How decisions are made is described in [GOVERNANCE.md](GOVERNANCE.md).
+
 1. Read `CLAUDE.md`, `docs/product/mvp.md` and the relevant ADRs before changing behaviour.
 2. Keep the product **functions-only** and **local-first**; AWS is always opt-in.
 3. Every behavioural change needs tests at the right layer and updated docs. Compatibility claims need evidence.

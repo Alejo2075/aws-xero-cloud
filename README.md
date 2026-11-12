@@ -183,7 +183,8 @@ Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CLAUDE.md`](CLAUDE.md) (project 
 
 ## Governance, naming and license
 
-Xero is an independent Cloud Republic OSS project. Sponsorship is never a runtime dependency, and the project works without
+Xero is an independent Cloud Republic OSS project ([`GOVERNANCE.md`](GOVERNANCE.md); community conduct is covered by the
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)). Sponsorship is never a runtime dependency, and the project works without
 any Cloud Republic, Hero or Zerverless service. Other products may integrate through the documented API and SDK.
 
 The name "Xero" is a **working name**: it clashes with an existing company and with an earlier infrastructure-as-prompt
