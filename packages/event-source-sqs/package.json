@@ -25,5 +25,11 @@
   "devDependencies": {
     "aws-sdk-client-mock": "^4.0.0",
     "@xero/telemetry": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

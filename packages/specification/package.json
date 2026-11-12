@@ -17,5 +17,11 @@
   ],
   "dependencies": {
     "zod": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

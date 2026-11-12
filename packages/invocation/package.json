@@ -26,5 +26,11 @@
   "devDependencies": {
     "@xero/registry": "workspace:*",
     "@xero/telemetry": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

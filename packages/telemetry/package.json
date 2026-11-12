@@ -17,5 +17,11 @@
   ],
   "dependencies": {
     "@xero/core": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

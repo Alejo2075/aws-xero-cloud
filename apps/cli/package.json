@@ -23,5 +23,11 @@
     "@xero/specification": "workspace:*",
     "@xero/core": "workspace:*",
     "yaml": "^2.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

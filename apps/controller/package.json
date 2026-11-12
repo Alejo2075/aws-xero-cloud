@@ -36,5 +36,11 @@
     "@xero/target-aws-lambda": "workspace:*",
     "@xero/event-source-sqs": "workspace:*",
     "zod": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

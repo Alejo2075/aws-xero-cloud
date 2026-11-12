@@ -1,0 +1,33 @@
+name: release
+# Tag vX.Y.Z -> verify, build an SBOM, and (only when XERO_PUBLISH=true and NPM_TOKEN is set) publish with provenance.
+# Do not enable publishing before the project name/npm scope is decided (see CHANGELOG "Known gaps").
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      dry_run: { description: 'Dry run (no publish)', type: boolean, default: true }
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm, registry-url: 'https://registry.npmjs.org' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm audit --prod --audit-level high
+      - name: SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cyclonedx-npm@1 --omit dev --output-file sbom.cdx.json --ignore-npm-errors
+      - uses: actions/upload-artifact@v4
+        with: { name: sbom, path: sbom.cdx.json }
+      - name: Publish
+        if: ${{ vars.XERO_PUBLISH == 'true' && (github.event_name == 'push' || inputs.dry_run == false) }}
+        run: pnpm -r publish --provenance --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

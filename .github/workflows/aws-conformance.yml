@@ -1,0 +1,35 @@
+name: aws-conformance (opt-in, disposable account only)
+# Runs tests/aws-disposable against a throwaway AWS account using GitHub OIDC (no stored keys).
+# Disabled until the repository variable XERO_AWS_CONFORMANCE_ROLE_ARN is set. NEVER point this at a shared/production account.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * 1'
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  aws:
+    if: ${{ vars.XERO_AWS_CONFORMANCE_ROLE_ARN != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.XERO_AWS_CONFORMANCE_ROLE_ARN }}
+          aws-region: ${{ vars.XERO_TEST_AWS_REGION }}
+          role-session-name: xero-conformance
+      - run: pnpm install --frozen-lockfile && pnpm build
+      - run: pnpm test:aws-disposable
+        env:
+          XERO_TEST_AWS_PROFILE: default
+          XERO_TEST_AWS_REGION: ${{ vars.XERO_TEST_AWS_REGION }}
+          XERO_TEST_ACCOUNT_ID: ${{ vars.XERO_TEST_ACCOUNT_ID }}
+          XERO_TEST_LAMBDA_ARN: ${{ vars.XERO_TEST_LAMBDA_ARN }}
+          XERO_TEST_ROLE_ARN: ${{ vars.XERO_TEST_ROLE_ARN }}
+          XERO_TEST_QUEUE_URL: ${{ vars.XERO_TEST_QUEUE_URL }}

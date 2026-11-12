@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  cp dev.xero.controller.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/dev.xero.controller.plist
+  Replace /usr/local/bin/xero-controller with the path from `which xero-controller` and YOUR_USER with your user name.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.xero.controller</string>
+  <key>ProgramArguments</key><array><string>/usr/local/bin/xero-controller</string></array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>XERO_HOME</key><string>/Users/YOUR_USER/.xero</string>
+    <key>PATH</key><string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ExitTimeOut</key><integer>30</integer>
+  <key>StandardErrorPath</key><string>/Users/YOUR_USER/.xero/controller.log</string>
+</dict>
+</plist>

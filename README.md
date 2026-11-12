@@ -49,6 +49,11 @@ xero events attach hello --source sqs --queue-url <existing-queue-url>
 Xero **never** creates Lambda functions, IAM roles, queues or any chargeable AWS resource. See
 [`docs/integrations/aws/`](docs/integrations/aws) for the exact IAM permissions each feature needs and its cost impact.
 
+## Running as a service
+`deploy/systemd/` and `deploy/launchd/` contain user-service definitions; shutdown drains in-flight invocations.
+Operations (`xero doctor`, `xero backup`, `xero tokens`, `xero images pull`) are described in
+[`docs/guides/getting-started.md`](docs/guides/getting-started.md). Current gaps are listed in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Repository layout
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md), the [getting-started guide](docs/guides/getting-started.md) and [`CLAUDE.md`](CLAUDE.md).

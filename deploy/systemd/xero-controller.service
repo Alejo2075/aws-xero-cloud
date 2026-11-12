@@ -1,0 +1,28 @@
+# Install as a *user* service so workers and state belong to your account:
+#   mkdir -p ~/.config/systemd/user && cp xero-controller.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now xero-controller
+#   loginctl enable-linger $USER      # keep it running after logout
+[Unit]
+Description=Xero controller (local Lambda-compatible runtime)
+After=network-online.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+# Adjust to where Xero is installed (e.g. the output of `which xero-controller`).
+ExecStart=/usr/bin/env xero-controller
+Environment=XERO_HOME=%h/.xero
+Environment=XERO_LOG_LEVEL=info
+Restart=on-failure
+RestartSec=3
+# SIGTERM triggers a graceful drain (XERO_DRAIN_TIMEOUT_MS, default 10 s).
+TimeoutStopSec=30
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=%h/.xero
+# The controller needs the container engine socket of the user running it.
+
+[Install]
+WantedBy=default.target

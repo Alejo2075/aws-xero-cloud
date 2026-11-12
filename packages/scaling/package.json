@@ -19,5 +19,11 @@
     "@xero/core": "workspace:*",
     "@xero/execution": "workspace:*",
     "@xero/shared": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }
