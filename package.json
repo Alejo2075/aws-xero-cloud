@@ -24,7 +24,7 @@
   "devDependencies": {
     "@aws-sdk/client-sqs": "^3.0.0",
     "@aws-sdk/credential-providers": "^3.0.0",
-    "@eslint/js": "^9.39.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.0",
     "@xero/aws-identity": "workspace:*",
     "@xero/controller": "workspace:*",
