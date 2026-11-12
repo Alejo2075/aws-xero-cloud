@@ -36,7 +36,7 @@
     "@xero/shared": "workspace:*",
     "@xero/specification": "workspace:*",
     "@xero/telemetry": "workspace:*",
-    "eslint": "^9.39.0",
+    "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.46.0",
