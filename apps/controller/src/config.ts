@@ -22,6 +22,8 @@ export interface ControllerConfig {
   drainTimeoutMs: number;
   /** Optional OCI runtime for stronger isolation (e.g. runsc for gVisor). */
   dockerRuntime: string | undefined;
+  /** Requests per second allowed per API principal (0 disables). */
+  rateLimitRps: number;
 }
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', 'localhost']);
@@ -57,6 +59,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, overrides: Part
     maxInvocations: int(env.XERO_MAX_INVOCATIONS, 2000, 10, 1_000_000, 'XERO_MAX_INVOCATIONS'),
     drainTimeoutMs: int(env.XERO_DRAIN_TIMEOUT_MS, 10_000, 0, 600_000, 'XERO_DRAIN_TIMEOUT_MS'),
     dockerRuntime: env.XERO_DOCKER_RUNTIME || undefined,
+    rateLimitRps: int(env.XERO_RATE_LIMIT_RPS, 200, 0, 100_000, 'XERO_RATE_LIMIT_RPS'),
     ...overrides,
   };
   assertLoopback(cfg.host);

@@ -28,6 +28,7 @@ Usage: xero <command> [options]            (add --json for machine-readable outp
   aws connect --region R [--profile P] | status | disconnect
   events attach <name> --source sqs --queue-url URL [--target T] [--batch-size N] [--max-in-flight N]
                        [--visibility-extension S] | list | detach <id>
+  tokens create <name> --scope read|invoke|admin | list | revoke <name>
   metrics [--prometheus]
   images pull [RUNTIME...]      pre-pull base images (avoids a slow first cold start)
   backup                        snapshot the registry (restore: xero-controller restore --from FILE)
@@ -307,6 +308,32 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
           print(`\nworkers: ${m.workers.total} total, ${m.workers.busy} busy, ${m.workers.idle} idle`);
         }
         return 0;
+      }
+
+      case 'tokens': {
+        const [sub, ...args] = rest;
+        const client = await io.client();
+        if (sub === 'create') {
+          const { values, positionals } = parse(args, { scope: { type: 'string' } });
+          const scope = values.scope;
+          if (scope !== 'read' && scope !== 'invoke' && scope !== 'admin') throw new CliUsageError('--scope must be read, invoke or admin');
+          const r = await client.createToken(need(positionals[0], 'token name'), scope);
+          out(values, r, () => `${r.token}\n\nStore this token now: it is shown once and only its hash is kept. Scope: ${scope}. Use it as XERO_TOKEN.`);
+          return 0;
+        }
+        if (sub === 'list') {
+          const { values } = parse(args, {});
+          const r = await client.listTokens();
+          out(values, r, () => (r.length ? table(r.map((t) => [t.name, t.scope, t.revokedAt ? 'revoked' : 'active', new Date(t.createdAt).toISOString().slice(0, 19)]), ['NAME', 'SCOPE', 'STATE', 'CREATED']) : 'No tokens (only the master token in the Xero home exists).'));
+          return 0;
+        }
+        if (sub === 'revoke') {
+          const { values, positionals } = parse(args, {});
+          await client.revokeToken(need(positionals[0], 'token name'));
+          out(values, { revoked: positionals[0] }, () => 'Revoked.');
+          return 0;
+        }
+        throw new CliUsageError('usage: xero tokens create|list|revoke');
       }
 
       case 'images': {

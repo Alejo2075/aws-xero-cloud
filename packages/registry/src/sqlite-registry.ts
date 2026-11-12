@@ -11,6 +11,9 @@ import {
   type LogLine,
   type LogicalFunction,
   type NewDeployment,
+  type ApiToken,
+  type TokenScope,
+  type TokenStore,
 } from '@xero/core';
 import { systemClock, newId, type Clock, type IdGenerator } from '@xero/shared';
 import type { Routing, Target } from '@xero/specification';
@@ -31,7 +34,7 @@ const str = (v: unknown): string => String(v);
 const optStr = (v: unknown): string | undefined => (v === null || v === undefined ? undefined : String(v));
 const num = (v: unknown): number => Number(v);
 
-export class SqliteRegistry implements FunctionRegistry {
+export class SqliteRegistry implements FunctionRegistry, TokenStore {
   private readonly db: DatabaseSync;
   private readonly clock: Clock;
   private readonly ids: IdGenerator;
@@ -290,6 +293,32 @@ export class SqliteRegistry implements FunctionRegistry {
   }
   deleteEventSource(id: string): boolean {
     return this.db.prepare('DELETE FROM event_sources WHERE id = ?').run(id).changes > 0;
+  }
+
+  // ---- api tokens ----
+  private toToken(r: Row): ApiToken {
+    return { id: str(r.id), name: str(r.name), scope: str(r.scope) as TokenScope, createdAt: num(r.created_at), revokedAt: r.revoked_at === null ? undefined : num(r.revoked_at) };
+  }
+  createToken(input: { name: string; scope: TokenScope; hash: string }): ApiToken {
+    const id = this.ids('tok');
+    const now = this.clock.now();
+    try {
+      this.db.prepare('INSERT INTO api_tokens (id,name,scope,hash,created_at) VALUES (?,?,?,?,?)').run(id, input.name, input.scope, input.hash, now);
+    } catch (e) {
+      if (String((e as Error).message).includes('UNIQUE')) throw new XeroError('INVALID_REQUEST', `a token named "${input.name}" already exists`);
+      throw e;
+    }
+    return { id, name: input.name, scope: input.scope, createdAt: now, revokedAt: undefined };
+  }
+  findActiveByHash(hash: string): ApiToken | undefined {
+    const r = this.db.prepare('SELECT * FROM api_tokens WHERE hash = ? AND revoked_at IS NULL').get(hash) as Row | undefined;
+    return r ? this.toToken(r) : undefined;
+  }
+  listTokens(): ApiToken[] {
+    return (this.db.prepare('SELECT * FROM api_tokens ORDER BY created_at').all() as Row[]).map((r) => this.toToken(r));
+  }
+  revokeToken(name: string): boolean {
+    return this.db.prepare('UPDATE api_tokens SET revoked_at = ? WHERE name = ? AND revoked_at IS NULL').run(this.clock.now(), name).changes > 0;
   }
 
   // ---- aws connection ----

@@ -3,6 +3,9 @@ import { access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import {
   XeroError,
+  type ApiToken,
+  type TokenScope,
+  type TokenStore,
   type ArtifactStore,
   type AwsConnection,
   type Deployment,
@@ -32,6 +35,7 @@ import {
 } from '@xero/specification';
 import { newId, systemClock, type Clock, type IdGenerator } from '@xero/shared';
 import type { MetricsRegistry } from '@xero/telemetry';
+import { hashToken, newApiToken } from './access.js';
 import type { ControllerConfig } from './config.js';
 import type { EventSourceManager } from './event-sources.js';
 
@@ -54,6 +58,7 @@ export function deploymentView(d: Deployment): DeploymentView {
 export interface ServiceDeps {
   config: ControllerConfig;
   registry: FunctionRegistry;
+  tokens: TokenStore;
   artifacts: ArtifactStore;
   runtimes: RuntimeCatalog;
   backend: ExecutionBackend;
@@ -281,6 +286,19 @@ export class XeroService {
 
   metricsSnapshot(): { series: ReturnType<MetricsRegistry['snapshot']>; workers: { total: number; busy: number; idle: number } } {
     return { series: this.d.metrics.snapshot(), workers: this.d.pool.stats() };
+  }
+
+  // ---------- API tokens ----------
+  /** The plaintext token is returned once and never stored (only its SHA-256). */
+  createToken(name: string, scope: TokenScope): { token: string; record: ApiToken } {
+    const token = newApiToken(scope);
+    return { token, record: this.d.tokens.createToken({ name, scope, hash: hashToken(token) }) };
+  }
+  listTokens(): ApiToken[] {
+    return this.d.tokens.listTokens();
+  }
+  revokeToken(name: string): void {
+    if (!this.d.tokens.revokeToken(name)) throw new XeroError('NOT_FOUND', `no active token named "${name}"`);
   }
 
   // ---------- operations ----------

@@ -57,7 +57,7 @@ describe('SqliteRegistry', () => {
     expect(r2.getFunctionByName('persist')?.routing.defaultTarget).toBe('aws-lambda');
     expect(r2.getActiveDeployment(fn.id, 'local')?.config).toMatchObject({ artifactId: 'sha256:z' });
     expect(r2.getAwsConnection()?.region).toBe('us-east-1');
-    expect(r2.schemaVersion).toBe(1);
+    expect(r2.schemaVersion).toBe(2);
   });
 
   it('refuses a database from a newer schema', () => {

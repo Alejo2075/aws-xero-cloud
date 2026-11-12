@@ -85,7 +85,7 @@ export async function createController(overrides: ControllerOverrides = {}, env:
     }),
   });
 
-  const service = new XeroService({ config, registry, artifacts, runtimes, backend, backup: (dest) => registry.backupTo(dest), router, pool, identity, lambda, events, metrics, logger });
+  const service = new XeroService({ config, registry, tokens: registry, artifacts, runtimes, backend, backup: (dest) => registry.backupTo(dest), router, pool, identity, lambda, events, metrics, logger });
 
   // Reap workers orphaned by a previous controller run (best effort; a stopped engine must not block startup).
   try {
@@ -96,7 +96,7 @@ export async function createController(overrides: ControllerOverrides = {}, env:
 
   pool.start();
   logWriter.start();
-  const server = createHttpServer({ service, token, logger: logger.child({ component: 'http' }) });
+  const server = createHttpServer({ service, token, tokens: registry, rateLimitRps: config.rateLimitRps, logger: logger.child({ component: 'http' }) });
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     server.listen(config.port, config.host, () => resolve());

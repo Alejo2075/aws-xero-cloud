@@ -12,6 +12,8 @@ import {
 } from '@xero/specification';
 import { MAX_PAYLOAD_BYTES, newId } from '@xero/shared';
 import type { Logger } from '@xero/core';
+import type { TokenStore } from '@xero/core';
+import { hashToken, RateLimiter, requiredScope, scopeAllows } from './access.js';
 import { tokenMatches } from './auth.js';
 import type { XeroService } from './service.js';
 
@@ -79,11 +81,15 @@ interface Route {
 
 export interface HttpOptions {
   service: XeroService;
+  /** Master (admin) token from `<home>/token`. */
   token: string;
+  tokens: TokenStore;
+  rateLimitRps?: number;
   logger: Logger;
 }
 
-export function createHttpServer({ service, token, logger }: HttpOptions): Server {
+export function createHttpServer({ service, token, tokens, rateLimitRps = 0, logger }: HttpOptions): Server {
+  const limiter = new RateLimiter(rateLimitRps, Math.max(1, rateLimitRps * 2), { now: () => Date.now() });
   const routes: Route[] = [];
   const on = (method: string, path: string, handler: Handler): void => {
     routes.push({ method, pattern: new RegExp(`^${path.replace(/:[a-z]+/g, '([^/]+)')}$`), handler });
@@ -165,6 +171,17 @@ export function createHttpServer({ service, token, logger }: HttpOptions): Serve
   on('POST', '/v1/backups', async ({ res }) => ok(res, service.createBackup(), 201));
   on('GET', '/v1/doctor', async ({ res }) => ok(res, await service.doctor()));
 
+  const tokenBody = z.object({ name: z.string().regex(/^[a-z0-9][a-z0-9-_]{0,31}$/), scope: z.enum(['read', 'invoke', 'admin']) }).strict();
+  on('GET', '/v1/tokens', async ({ res }) => ok(res, { tokens: service.listTokens() }));
+  on('POST', '/v1/tokens', async ({ req, res }) => {
+    const b = await readJson(req, tokenBody);
+    ok(res, service.createToken(b.name, b.scope), 201);
+  });
+  on('DELETE', '/v1/tokens/:name', async ({ res, params }) => {
+    service.revokeToken(decodeURIComponent(params[0] ?? ''));
+    ok(res, { revoked: true });
+  });
+
   on('GET', '/v1/aws/connection', async ({ res }) => ok(res, await service.awsStatus()));
   on('PUT', '/v1/aws/connection', async ({ req, res }) => ok(res, await service.connectAws(await readJson(req, awsConnectionRequestSchema))));
   on('DELETE', '/v1/aws/connection', async ({ res }) => {
@@ -193,7 +210,18 @@ export function createHttpServer({ service, token, logger }: HttpOptions): Serve
           const r = await service.ready();
           return send(res, r.ready ? 200 : 503, r);
         }
-        if (!tokenMatches(token, req.headers.authorization)) throw new XeroError('UNAUTHENTICATED', 'missing or invalid bearer token');
+        let principal: { id: string; scope: 'read' | 'invoke' | 'admin' };
+        if (tokenMatches(token, req.headers.authorization)) principal = { id: 'master', scope: 'admin' };
+        else {
+          const presented = /^Bearer (xero_[a-z]+_[0-9a-f]{48})$/.exec(req.headers.authorization ?? '')?.[1];
+          const found = presented ? tokens.findActiveByHash(hashToken(presented)) : undefined;
+          if (!found) throw new XeroError('UNAUTHENTICATED', 'missing or invalid bearer token');
+          principal = { id: found.id, scope: found.scope };
+        }
+        const wait = limiter.take(principal.id);
+        if (wait > 0) throw new XeroError('RATE_LIMITED', 'too many requests', { retryAfterSeconds: wait });
+        const needed = requiredScope(req.method ?? 'GET', url.pathname);
+        if (!scopeAllows(principal.scope, needed)) throw new XeroError('FORBIDDEN', `this token cannot perform this action (needs ${needed} scope)`, { needed });
         for (const r of routes) {
           if (r.method !== req.method) continue;
           const m = r.pattern.exec(url.pathname);
@@ -207,6 +235,7 @@ export function createHttpServer({ service, token, logger }: HttpOptions): Serve
         if (res.headersSent) return void res.end();
         const extra: Record<string, string> = { 'x-xero-request-id': requestId };
         if (err.code === 'AWS_THROTTLED' || err.code === 'CAPACITY_EXHAUSTED') extra['retry-after'] = '1';
+        if (err.code === 'RATE_LIMITED') extra['retry-after'] = String(err.details?.retryAfterSeconds ?? 1);
         send(res, err.httpStatus, { error: { ...err.toJSON(), requestId } }, extra);
       }
     })();

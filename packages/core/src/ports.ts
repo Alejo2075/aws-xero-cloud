@@ -1,5 +1,7 @@
 import type { InvocationType, Target } from '@xero/specification';
 import type {
+  ApiToken,
+  TokenScope,
   ArtifactRef,
   AwsConnection,
   Deployment,
@@ -41,6 +43,15 @@ export interface FunctionRegistry {
 
   getAwsConnection(): AwsConnection | undefined;
   setAwsConnection(connection: AwsConnection | undefined): void;
+}
+
+/** Persistence of scoped API tokens. Only SHA-256 hashes are stored; the plaintext is shown once at creation. */
+export interface TokenStore {
+  createToken(input: { name: string; scope: TokenScope; hash: string }): ApiToken;
+  findActiveByHash(hash: string): ApiToken | undefined;
+  listTokens(): ApiToken[];
+  /** Revokes by name. Returns false when no active token has that name. */
+  revokeToken(name: string): boolean;
 }
 
 /** Content-addressed immutable artifact storage. Implemented by `@xero/artifacts`. */

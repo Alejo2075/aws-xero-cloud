@@ -123,6 +123,16 @@ export interface AwsConnection {
   verifiedAt: number;
 }
 
+export type TokenScope = 'read' | 'invoke' | 'admin';
+
+export interface ApiToken {
+  id: string;
+  name: string;
+  scope: TokenScope;
+  createdAt: number;
+  revokedAt: number | undefined;
+}
+
 export interface ArtifactRef {
   id: string; // sha256:<hex>
   sizeBytes: number;

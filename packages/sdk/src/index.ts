@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type {
+  ApiToken,
   AwsConnection,
   DeploymentView,
   ErrorCode,
@@ -19,7 +20,7 @@ import type {
   Target,
 } from '@xero/specification';
 
-export type { DeploymentView, FunctionView, InvocationRecord, LogLine, EventSource, AwsConnection, Target, InvocationType };
+export type { ApiToken, DeploymentView, FunctionView, InvocationRecord, LogLine, EventSource, AwsConnection, Target, InvocationType };
 
 export class XeroApiError extends Error {
   override readonly name = 'XeroApiError';
@@ -210,6 +211,17 @@ export class XeroClient {
   // observability
   metrics(): Promise<{ series: Array<{ kind: string; name: string; labels: Record<string, string>; value?: number; count?: number; sum?: number; max?: number }>; workers: { total: number; busy: number; idle: number } }> {
     return this.json('GET', '/v1/metrics');
+  }
+
+  // access control
+  createToken(name: string, scope: 'read' | 'invoke' | 'admin'): Promise<{ token: string; record: ApiToken }> {
+    return this.json('POST', '/v1/tokens', { name, scope });
+  }
+  async listTokens(): Promise<ApiToken[]> {
+    return (await this.json<{ tokens: ApiToken[] }>('GET', '/v1/tokens')).tokens;
+  }
+  async revokeToken(name: string): Promise<void> {
+    await this.json('DELETE', `/v1/tokens/${encodeURIComponent(name)}`);
   }
 
   // operations

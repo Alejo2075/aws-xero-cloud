@@ -77,4 +77,19 @@ CREATE TABLE event_sources (
 CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
 `,
   },
+  {
+    version: 2,
+    name: 'api_tokens',
+    sql: `
+CREATE TABLE api_tokens (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  scope TEXT NOT NULL CHECK (scope IN ('read','invoke','admin')),
+  hash TEXT NOT NULL UNIQUE,
+  created_at INTEGER NOT NULL,
+  revoked_at INTEGER
+) STRICT;
+CREATE UNIQUE INDEX api_tokens_active_name ON api_tokens(name) WHERE revoked_at IS NULL;
+`,
+  },
 ];
