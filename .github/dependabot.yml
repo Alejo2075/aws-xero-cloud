@@ -1,8 +1,27 @@
 version: 2
 updates:
-  - package-ecosystem: github-actions   # keeps the pinned action SHAs current
+  # Keeps the pinned GitHub Action SHAs current. Minor/patch updates arrive as one PR; majors stay separate.
+  - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+
+  # npm/pnpm: watch the root AND every workspace package (production dependencies such as zod, yaml and the
+  # AWS SDK live in apps/* and packages/*, not in the root package.json).
   - package-ecosystem: npm
-    directory: /
+    directories: ['/', '/apps/*', '/packages/*']
     schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    ignore:
+      # Types must follow the minimum supported Node.js major (engines.node >= 24), not the newest one.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+    groups:
+      aws-sdk:
+        patterns: ['@aws-sdk/*', '@smithy/*', '@aws/*']
+      dev-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
